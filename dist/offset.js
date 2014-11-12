@@ -693,8 +693,20 @@ function Offset(vertices, arcSegments) {
         edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
     }
 
+    /**
+     * @type {Array.<Object>}
+     */
     this.vertices = vertices;
+
+    /**
+     * @type {Array.<Edge>}
+     */
     this.edges = edges;
+
+    /**
+     * Segments in edge bounding arches
+     * @type {Number}
+     */
     this.arcSegments = arcSegments || 5;
 };
 
