@@ -2,6 +2,10 @@
 
 Small lib for polygon offsetting(margin/padding). See the [example](http://w8r.github.io/polygon-offset) of how it can be used with [Leaflet](http://leafletjs.com).
 
+The reason I wrote this is that the only working solution to this problem known to me is Angus Johnson's [Clipper](http://www.angusj.com/delphi/clipper.php) library. Library is huge and offsetting in it is subroutine.
+
+This library depends on [Greiner-Hormann](http://w8r.github.io/GreinerHormann) polygon clipping algorithm, and combined with it weighs ~6kb.
+
 ## Install
 
 Node
@@ -35,6 +39,10 @@ var padding  = new Offset(points).padding(10);
 var unknown  = new Offset(points).offset(x);
 
 ```
+
+## Dependencies
+
+[Greiner-Hormann](http://w8r.github.io/GreinerHormann) clipping algorithm
 
 ## Development
 
