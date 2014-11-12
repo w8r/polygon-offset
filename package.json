@@ -1,8 +1,8 @@
 {
     "name": "polygon-offset",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "description": "Polygon offsetting algorithm, aimed for use with leaflet",
-    "main": "dist/offset.js",
+    "main": "src/offset.js",
     "keywords": [
         "polygon",
         "offset",
