@@ -25,6 +25,42 @@ window.module = {
  */
 function Offset(v, s) {};
 
+/**
+ * Change data set
+ * @param  {Array.<Array>} vertices
+ * @return {Offset}
+ */
+Offset.prototype.data = function(vertices) {};
+
+/**
+ * @param  {Number} arcSegments
+ * @return {Offset}
+ */
+Offset.prototype.arcSegments = function(arcSegments) {};
+
+/**
+ * Create padding polygon
+ *
+ * @param  {Number} distance
+ * @return {Array.<Number>}
+ */
+Offset.prototype.padding = function(dist) {};
+
+/**
+ * Creates margin polygon
+ * @param  {Number} dist
+ * @return {Array.<Object>}
+ */
+Offset.prototype.margin = function(dist) {};
+
+/**
+ * Decides by the sign if it's a padding or a margin
+ *
+ * @param  {Number} dist
+ * @return {Array.<Object>}
+ */
+Offset.prototype.offset = function(dist) {};
+
 // this is for clipper
 
 /**
