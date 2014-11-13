@@ -11,31 +11,79 @@ var min = Math.min,
 /**
  * Offset builder
  *
- * @param {Array.<Object>} vertices
+ * @param {Array.<Object>=} vertices
  * @param {Number=}        arcSegments
  * @constructor
  */
 function Offset(vertices, arcSegments) {
-    var edges = [];
-    for (var i = 0, len = vertices.length; i < len; i++) {
-        edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
-    }
 
     /**
      * @type {Array.<Object>}
      */
-    this.vertices = vertices;
+    this.vertices = null;
 
     /**
      * @type {Array.<Edge>}
      */
-    this.edges = edges;
+    this.edges = null;
+
+    /**
+     * @type {Boolean}
+     */
+    this._closed = false;
+
+    if (vertices) {
+        this.data(vertices);
+    }
 
     /**
      * Segments in edge bounding arches
      * @type {Number}
      */
-    this.arcSegments = arcSegments || 5;
+    this._arcSegments = arcSegments || 5;
+};
+
+/**
+ * Change data set
+ * @param  {Array.<Array>} vertices
+ * @return {Offset}
+ */
+Offset.prototype.data = function(vertices) {
+    vertices = this.validate(vertices);
+
+    var edges = [];
+    for (var i = 0, len = vertices.length; i < len; i++) {
+        edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
+    }
+
+    this.vertices = vertices;
+    this.edges = edges;
+    return this;
+};
+
+/**
+ * @param  {Number} arcSegments
+ * @return {Offset}
+ */
+Offset.prototype.arcSegments = function(arcSegments) {
+    this._arcSegments = arcSegments;
+    return this;
+};
+
+/**
+ * Validates if the first and last points repeat
+ * TODO: check CCW
+ *
+ * @param  {Array.<Object>} vertices
+ */
+Offset.prototype.validate = function(vertices) {
+    var len = vertices.length;
+    if (vertices[0].x === vertices[len - 1].x &&
+        vertices[0].y === vertices[len - 1].y) {
+        vertices = vertices.slice(0, len - 1);
+        this._closed = true;
+    }
+    return vertices;
 };
 
 /**
@@ -121,12 +169,14 @@ Offset.prototype.padding = function(dist) {
                 dist,
                 prevEdge.next,
                 thisEdge.current,
-                this.arcSegments,
+                this._arcSegments,
                 false);
         }
     }
     union = GreinerHormann.union(vertices, vertices);
     vertices = union ? union[0] : vertices;
+
+    vertices = this.ensureLastPoint(vertices);
     return vertices;
 };
 
@@ -166,7 +216,7 @@ Offset.prototype.margin = function(dist) {
                 dist,
                 prevEdge.next,
                 thisEdge.current,
-                this.arcSegments,
+                this._arcSegments,
                 true
             );
         }
@@ -179,8 +229,23 @@ Offset.prototype.margin = function(dist) {
         vertices = union.slice(0, union.length / 2);
     }
 
+    vertices = this.ensureLastPoint(vertices);
     return vertices;
-}
+};
+
+/**
+ * @param  {Array.<Object>} vertices
+ * @return {Array.<Object>}
+ */
+Offset.prototype.ensureLastPoint = function(vertices) {
+    if (this._closed) {
+        vertices.push({
+            x: vertices[0].x,
+            y: vertices[0].y
+        });
+    }
+    return vertices;
+};
 
 /**
  * Decides by the sign if it's a padding or a margin

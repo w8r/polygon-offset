@@ -28,15 +28,19 @@ Browser
 ## Use
 
 ```js
+// if the first point repeats(for instance GeoJSON) -
+// the output will have it as well
 var points = [
     {x:0, y: 0}, {x: 100, y:0},
-    {x: 100, y:100}, {x: 0, y: 100}];
+    {x: 100, y:100}, {x: 0, y: 100},
+    {x:0, y:0}], x = -10;
 
-var margined = new Offset(points).margin(10);
-var padding  = new Offset(points).padding(10);
+var offset = new Offset();
+var margined = offset.data(points).margin(10);
+var padding = offset.data(points).padding(10);
 
 // decides from the sign of x: negative for padding
-var unknown  = new Offset(points).offset(x);
+var unknown = offset.data(points).arcSegments(3).offset(x);
 
 ```
 
