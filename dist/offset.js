@@ -558,7 +558,7 @@ return {
  *
  * @param  {Object} current
  * @param  {Object} next
- * @return {[type]}           [description]
+ * @cosntructor
  */
 function Edge(current, next) {
 
