@@ -1,40 +1,40 @@
 {
-    "name": "polygon-offset",
-    "version": "0.0.5",
-    "description": "Polygon offsetting algorithm, aimed for use with leaflet",
-    "main": "src/offset.js",
-    "keywords": [
-        "polygon",
-        "offset",
-        "algorithm",
-        "scale",
-        "margin",
-        "padding"
-    ],
-    "author": "Alexander Milevski <info@w8r.name>",
-    "license": "MIT",
-    "devDependencies": {
-        "catw": "^0.2.0",
-        "leaflet": "^0.7.3",
-        "less": "^2.0.0",
-        "serve": "^1.4.0",
-        "watchify": "^2.1.1"
-    },
-    "scripts": {
-        "watch-css": "catw -c 'lessc -' 'example/*.less' -o example/style.css -v",
-        "watch-js": "watchify example/app.js -o example/bundle.js -dv",
-        "watch": "npm run watch-css & npm run watch-js",
-        "build-css": "catw -c 'lessc -' 'example/*.less' > example/style.css",
-        "build-js": "browserify -s Offset src/offset.js > dist/offset.js",
-        "build": "npm run build-css && npm run build-js",
-        "start": "npm run watch & serve",
-        "test": "node test/test.js"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/w8r/polygon-offset.git"
-    },
-    "dependencies": {
-        "greiner-hormann": "^1.2.0"
-    }
+  "name": "polygon-offset",
+  "version": "0.1.0",
+  "description": "Polygon offsetting algorithm, aimed for use with leaflet",
+  "main": "src/offset.js",
+  "keywords": [
+    "polygon",
+    "offset",
+    "algorithm",
+    "scale",
+    "margin",
+    "padding"
+  ],
+  "author": "Alexander Milevski <info@w8r.name>",
+  "license": "MIT",
+  "devDependencies": {
+    "catw": "^0.2.0",
+    "leaflet": "^0.7.3",
+    "less": "^2.0.0",
+    "serve": "^1.4.0",
+    "watchify": "^2.1.1"
+  },
+  "scripts": {
+    "watch-css": "catw -c 'lessc -' 'example/*.less' -o example/style.css -v",
+    "watch-js": "watchify example/app.js -o example/bundle.js -dv",
+    "watch": "npm run watch-css & npm run watch-js",
+    "build-css": "catw -c 'lessc -' 'example/*.less' > example/style.css",
+    "build-js": "browserify -s Offset src/offset.js > dist/offset.js",
+    "build": "npm run build-css && npm run build-js",
+    "start": "npm run watch & serve",
+    "test": "node test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/w8r/polygon-offset.git"
+  },
+  "dependencies": {
+    "greiner-hormann": "^1.2.0"
+  }
 }
