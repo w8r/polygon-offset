@@ -78,8 +78,8 @@ Offset.prototype.arcSegments = function(arcSegments) {
  */
 Offset.prototype.validate = function(vertices) {
     var len = vertices.length;
-    if (vertices[0].x === vertices[len - 1].x &&
-        vertices[0].y === vertices[len - 1].y) {
+    if (vertices[0][0] === vertices[len - 1][0] &&
+        vertices[0][1] === vertices[len - 1][1]) {
         vertices = vertices.slice(0, len - 1);
         this._closed = true;
     }
@@ -101,8 +101,8 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
     endVertex, segments, outwards) {
 
     var PI2 = Math.PI * 2,
-        startAngle = atan2(startVertex.y - center.y, startVertex.x - center.x),
-        endAngle = atan2(endVertex.y - center.y, endVertex.x - center.x);
+        startAngle = atan2(startVertex[1] - center[1], startVertex[0] - center[0]),
+        endAngle = atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
 
     // odd number please
     if (segments % 2 === 0) {
@@ -125,10 +125,10 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
     vertices.push(startVertex);
     for (var i = 1; i < segments; ++i) {
         angle = startAngle + segmentAngle * i;
-        vertices.push({
-            x: center.x + Math.cos(angle) * radius,
-            y: center.y + Math.sin(angle) * radius
-        });
+        vertices.push([
+            center[0] + Math.cos(angle) * radius,
+            center[1] + Math.sin(angle) * radius
+        ]);
     }
     vertices.push(endVertex);
 };
@@ -146,8 +146,8 @@ Offset.prototype.padding = function(dist) {
 
     for (i = 0, len = this.edges.length; i < len; i++) {
         var edge = this.edges[i],
-            dx = edge._outNormal.x * dist,
-            dy = edge._outNormal.y * dist;
+            dx = edge._outNormal[0] * dist,
+            dy = edge._outNormal[1] * dist;
         offsetEdges.push(edge.offset(dx, dy));
     }
 
@@ -191,8 +191,8 @@ Offset.prototype.margin = function(dist) {
         i, len, union;
     for (i = 0, len = this.edges.length; i < len; i++) {
         var edge = this.edges[i],
-            dx = edge._inNormal.x * dist,
-            dy = edge._inNormal.y * dist;
+            dx = edge._inNormal[0] * dist,
+            dy = edge._inNormal[1] * dist;
 
         offsetEdges.push(edge.offset(dx, dy));
     }
@@ -239,10 +239,10 @@ Offset.prototype.margin = function(dist) {
  */
 Offset.prototype.ensureLastPoint = function(vertices) {
     if (this._closed) {
-        vertices.push({
-            x: vertices[0].x,
-            y: vertices[0].y
-        });
+        vertices.push([
+            vertices[0][0],
+            vertices[0][1]
+        ]);
     }
     return vertices;
 };

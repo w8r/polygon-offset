@@ -1,5 +1,5 @@
 var L = require('leaflet');
-//var Offset = require('../src/offset');
+var Offset = require('../src/offset');
 
 var points = [
         [22.266574756525035, 114.18707728385925],
@@ -55,14 +55,15 @@ L.polygon(points, style).addTo(map);
 
 
 vertices = points.map(function(p) {
-    return map.options.crs.latLngToPoint(L.latLng(p), map.getZoom());
+  var pt = map.options.crs.latLngToPoint(L.latLng(p), map.getZoom());
+  return [pt.x, pt.y];
 });
 
 console.time('margin');
 result = new Offset(vertices).margin(40);
 console.timeEnd('margin');
 result = result.map(function(p) {
-    return map.options.crs.pointToLatLng(p, map.getZoom());
+    return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
 });
 
 L.polygon(result, marginStyle).addTo(map);
@@ -70,7 +71,7 @@ console.time('padding');
 result = new Offset(vertices).padding(10);
 console.timeEnd('padding');
 result = result.map(function(p) {
-    return map.options.crs.pointToLatLng(p, map.getZoom());
+    return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
 });
 
 L.polygon(result, paddingStyle).addTo(map);

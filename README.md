@@ -31,9 +31,10 @@ Browser
 // if the first point repeats(for instance GeoJSON) -
 // the output will have it as well
 var points = [
-    {x:0, y: 0}, {x: 100, y:0},
-    {x: 100, y:100}, {x: 0, y: 100},
-    {x:0, y:0}], x = -10;
+  [0,0], [0,100],
+  [100,100], [100,0], [0,0]
+];
+var x = -10;
 
 var offset = new Offset();
 var margined = offset.data(points).margin(10);
@@ -74,7 +75,7 @@ $ make
 
 The MIT License (MIT)
 
-Copyright (c) 2014 Alexander Milevski
+Copyright (c) 2015 Alexander Milevski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

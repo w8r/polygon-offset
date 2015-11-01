@@ -36,10 +36,10 @@ function Edge(current, next) {
  */
 Edge.prototype.outwardsNormal = function() {
     var inwards = this.inwardsNormal();
-    return {
-        x: -inwards.x,
-        y: -inwards.y
-    };
+    return [
+        -inwards[0],
+        -inwards[1]
+    ];
 };
 
 /**
@@ -47,14 +47,14 @@ Edge.prototype.outwardsNormal = function() {
  * @return {Object}
  */
 Edge.prototype.inwardsNormal = function() {
-    var dx = this.next.x - this.current.x,
-        dy = this.next.y - this.current.y,
+    var dx = this.next[0] - this.current[0],
+        dy = this.next[1] - this.current[1],
         edgeLength = Math.sqrt(dx * dx + dy * dy);
 
-    return {
-        x: -dy / edgeLength,
-        y: dx / edgeLength
-    };
+    return [
+        -dy / edgeLength,
+        dx / edgeLength
+    ];
 };
 
 /**
@@ -67,13 +67,13 @@ Edge.prototype.offset = function(dx, dy) {
     var current = this.current,
         next = this.next;
 
-    return new Edge({
-        x: current.x + dx,
-        y: current.y + dy
-    }, {
-        x: next.x + dx,
-        y: next.y + dy
-    });
+    return new Edge([
+        current[0] + dx,
+        current[1] + dy
+    ], [
+        next[0] + dx,
+        next[1] + dy
+    ]);
 };
 
 module.exports = Edge;

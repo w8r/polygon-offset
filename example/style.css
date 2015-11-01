@@ -21,6 +21,7 @@ body,html{margin:0;padding:0;width:100%;height:100%}/* required styles */
 .leaflet-container {
 	overflow: hidden;
 	-ms-touch-action: none;
+	touch-action: none;
 	}
 .leaflet-tile,
 .leaflet-marker-icon,

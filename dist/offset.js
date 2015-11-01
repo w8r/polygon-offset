@@ -1,160 +1,61 @@
-!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Offset=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
- * @preserve Licensed under MIT License
- */
-(function(root, factory) {
-        if (typeof define === 'function' && define.amd) {
-            define([], factory);
-        } else if (typeof exports === 'object') {
-            module['exports'] = factory();
-        } else {
-            /**
-             * @api
-             * @export
-             */
-            window['greinerHormann'] = factory();
-        }
-    }(this, function() {
-// ES5 15.4.3.2 Array.isArray ( arg )
-// https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/isArray
-Array.isArray = Array.isArray || function(o) {
-    return Boolean(o && Object.prototype.toString.call(Object(o)) === '[object Array]');
-};
-/**
- * Vertex representation
- *
- * @param {Number|Array.<Number>} x
- * @param {Number=}               y
- *
- * @constructor
- */
-var Vertex = function(x, y) {
-
-    if (arguments.length === 1) {
-        // Coords
-        if (Array.isArray(x)) {
-            y = x[1];
-            x = x[0];
-        } else {
-            y = x.y;
-            x = x.x;
-        }
-    }
-
-    /**
-     * X coordinate
-     * @type {Number}
-     */
-    this.x = x;
-
-    /**
-     * Y coordinate
-     * @type {Number}
-     */
-    this.y = y;
-
-    /**
-     * Next node
-     * @type {Vertex}
-     */
-    this.next = null;
-
-    /**
-     * Previous vertex
-     * @type {Vertex}
-     */
-    this.prev = null;
-
-    /**
-     * Corresponding intersection in other polygon
-     */
-    this._corresponding = null;
-
-    /**
-     * Distance from previous
-     */
-    this._distance = 0.0;
-
-    /**
-     * Entry/exit point in another polygon
-     * @type {Boolean}
-     */
-    this._isEntry = true;
-
-    /**
-     * Intersection vertex flag
-     * @type {Boolean}
-     */
-    this._isIntersection = false;
-
-    /**
-     * Loop check
-     * @type {Boolean}
-     */
-    this._visited = false;
-};
+!function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var f;"undefined"!=typeof window?f=window:"undefined"!=typeof global?f=global:"undefined"!=typeof self&&(f=self),f.Offset=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(_dereq_,module,exports){
+var Polygon = _dereq_('./polygon');
 
 /**
- * Creates intersection vertex
- * @param  {Number} x
- * @param  {Number} y
- * @param  {Number} distance
- * @return {Vertex}
+ * Clip driver
+ * @api
+ * @param  {Array.<Array.<Number>>} polygonA
+ * @param  {Array.<Array.<Number>>} polygonB
+ * @param  {Boolean}                sourceForwards
+ * @param  {Boolean}                clipForwards
+ * @return {Array.<Array.<Number>>}
  */
-Vertex.createIntersection = function(x, y, distance) {
-    var vertex = new Vertex(x, y);
-    vertex._distance = distance;
-    vertex._isIntersection = true;
-    vertex._isEntry = false;
-    return vertex;
+module.exports = function(polygonA, polygonB, eA, eB) {
+    var result, source = new Polygon(polygonA),
+        clip = new Polygon(polygonB),
+        result = source.clip(clip, eA, eB);
+
+    return result;
 };
 
-/**
- * Mark as visited
- */
-Vertex.prototype.visit = function() {
-    this._visited = true;
-    if (this._corresponding !== null && !this._corresponding._visited) {
-        this._corresponding.visit();
-    }
+},{"./polygon":4}],2:[function(_dereq_,module,exports){
+var clip = _dereq_('./clip');
+
+module.exports = {
+    /**
+     * @api
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
+     * @return {Array.<Array.<Number>>|Array.<Array.<Object>|Null}
+     */
+    union: function(polygonA, polygonB) {
+        return clip(polygonA, polygonB, false, false);
+    },
+
+    /**
+     * @api
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
+     * @return {Array.<Array.<Number>>|Array.<Array.<Object>>|Null}
+     */
+    intersection: function(polygonA, polygonB) {
+        return clip(polygonA, polygonB, true, true);
+    },
+
+    /**
+     * @api
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
+     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
+     * @return {Array.<Array.<Number>>|Array.<Array.<Object>>|Null}
+     */
+    diff: function(polygonA, polygonB) {
+        return clip(polygonA, polygonB, false, true);
+    },
+
+    clip: clip
 };
 
-/**
- * Convenience
- * @param  {Vertex}  v
- * @return {Boolean}
- */
-Vertex.prototype.equals = function(v) {
-    return this.x === v.x && this.y === v.y;
-};
-
-/**
- * Check if vertex is inside a polygon by odd-even rule:
- * If the number of intersections of a ray out of the point and polygon
- * segments is odd - the point is inside.
- */
-Vertex.prototype.isInside = function(poly) {
-    var oddNodes = false,
-        vertex = poly.first,
-        next = vertex.next,
-        x = this.x,
-        y = this.y;
-
-    do {
-        if ((vertex.y < y && next.y >= y ||
-                next.y < y && vertex.y >= y) &&
-            (vertex.x <= x || next.x <= x)) {
-
-            oddNodes ^= (vertex.x + (y - vertex.y) /
-                (next.y - vertex.y) * (next.x - vertex.x) < x);
-        }
-
-        vertex = vertex.next;
-        next = vertex.next || poly.first;
-    } while (!vertex.equals(poly.first));
-
-    return oddNodes;
-};
+},{"./clip":1}],3:[function(_dereq_,module,exports){
 /**
  * Intersection
  * @param {Vertex} s1
@@ -213,6 +114,13 @@ var Intersection = function(s1, s2, c1, c2) {
 Intersection.prototype.valid = function() {
     return (0 < this.toSource && this.toSource < 1) && (0 < this.toClip && this.toClip < 1);
 };
+
+module.exports = Intersection;
+
+},{}],4:[function(_dereq_,module,exports){
+var Vertex = _dereq_('./vertex');
+var Intersection = _dereq_('./intersection');
+
 /**
  * Polygon representation
  * @param {Array.<Array.<Number>>} p
@@ -496,61 +404,151 @@ Polygon.prototype.clip = function(clip, sourceForwards, clipForwards) {
 
     return list;
 };
-// Router
 
+module.exports = Polygon;
+
+},{"./intersection":3,"./vertex":5}],5:[function(_dereq_,module,exports){
 /**
- * Clip driver
- * @api
- * @param  {Array.<Array.<Number>>} polygonA
- * @param  {Array.<Array.<Number>>} polygonB
- * @param  {Boolean}                sourceForwards
- * @param  {Boolean}                clipForwards
- * @return {Array.<Array.<Number>>}
+ * Vertex representation
+ *
+ * @param {Number|Array.<Number>} x
+ * @param {Number=}               y
+ *
+ * @constructor
  */
-function clip(polygonA, polygonB, eA, eB) {
-    var result, source = new Polygon(polygonA),
-        clip = new Polygon(polygonB),
-        result = source.clip(clip, eA, eB);
+var Vertex = function(x, y) {
 
-    return result;
-}
-return {
-    /**
-     * @api
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
-     * @return {Array.<Array.<Number>>|Array.<Array.<Object>|Null}
-     */
-    union: function(polygonA, polygonB) {
-        return clip(polygonA, polygonB, false, false);
-    },
+    if (arguments.length === 1) {
+        // Coords
+        if (Array.isArray(x)) {
+            y = x[1];
+            x = x[0];
+        } else {
+            y = x.y;
+            x = x.x;
+        }
+    }
 
     /**
-     * @api
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
-     * @return {Array.<Array.<Number>>|Array.<Array.<Object>>|Null}
+     * X coordinate
+     * @type {Number}
      */
-    intersection: function(polygonA, polygonB) {
-        return clip(polygonA, polygonB, true, true);
-    },
+    this.x = x;
 
     /**
-     * @api
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonA
-     * @param  {Array.<Array.<Number>|Array.<Object>} polygonB
-     * @return {Array.<Array.<Number>>|Array.<Array.<Object>>|Null}
+     * Y coordinate
+     * @type {Number}
      */
-    diff: function(polygonA, polygonB) {
-        return clip(polygonA, polygonB, false, true);
-    },
+    this.y = y;
 
-    clip: clip
+    /**
+     * Next node
+     * @type {Vertex}
+     */
+    this.next = null;
+
+    /**
+     * Previous vertex
+     * @type {Vertex}
+     */
+    this.prev = null;
+
+    /**
+     * Corresponding intersection in other polygon
+     */
+    this._corresponding = null;
+
+    /**
+     * Distance from previous
+     */
+    this._distance = 0.0;
+
+    /**
+     * Entry/exit point in another polygon
+     * @type {Boolean}
+     */
+    this._isEntry = true;
+
+    /**
+     * Intersection vertex flag
+     * @type {Boolean}
+     */
+    this._isIntersection = false;
+
+    /**
+     * Loop check
+     * @type {Boolean}
+     */
+    this._visited = false;
 };
 
-}));
+/**
+ * Creates intersection vertex
+ * @param  {Number} x
+ * @param  {Number} y
+ * @param  {Number} distance
+ * @return {Vertex}
+ */
+Vertex.createIntersection = function(x, y, distance) {
+    var vertex = new Vertex(x, y);
+    vertex._distance = distance;
+    vertex._isIntersection = true;
+    vertex._isEntry = false;
+    return vertex;
+};
 
-},{}],2:[function(require,module,exports){
+/**
+ * Mark as visited
+ */
+Vertex.prototype.visit = function() {
+    this._visited = true;
+    if (this._corresponding !== null && !this._corresponding._visited) {
+        this._corresponding.visit();
+    }
+};
+
+/**
+ * Convenience
+ * @param  {Vertex}  v
+ * @return {Boolean}
+ */
+Vertex.prototype.equals = function(v) {
+    return this.x === v.x && this.y === v.y;
+};
+
+/**
+ * Check if vertex is inside a polygon by odd-even rule:
+ * If the number of intersections of a ray out of the point and polygon
+ * segments is odd - the point is inside.
+ * @param {Polygon} poly
+ * @return {Boolean}
+ */
+Vertex.prototype.isInside = function(poly) {
+    var oddNodes = false,
+        vertex = poly.first,
+        next = vertex.next,
+        x = this.x,
+        y = this.y;
+
+    do {
+        if ((vertex.y < y && next.y >= y ||
+                next.y < y && vertex.y >= y) &&
+            (vertex.x <= x || next.x <= x)) {
+
+            oddNodes ^= (vertex.x + (y - vertex.y) /
+                (next.y - vertex.y) * (next.x - vertex.x) < x);
+        }
+
+        vertex = vertex.next;
+        next = vertex.next || poly.first;
+    } while (!vertex.equals(poly.first));
+
+    return oddNodes;
+};
+
+module.exports = Vertex;
+
+},{}],6:[function(_dereq_,module,exports){
 "use strict";
 
 /**
@@ -589,10 +587,10 @@ function Edge(current, next) {
  */
 Edge.prototype.outwardsNormal = function() {
     var inwards = this.inwardsNormal();
-    return {
-        x: -inwards.x,
-        y: -inwards.y
-    };
+    return [
+        -inwards[0],
+        -inwards[1]
+    ];
 };
 
 /**
@@ -600,14 +598,14 @@ Edge.prototype.outwardsNormal = function() {
  * @return {Object}
  */
 Edge.prototype.inwardsNormal = function() {
-    var dx = this.next.x - this.current.x,
-        dy = this.next.y - this.current.y,
+    var dx = this.next[0] - this.current[0],
+        dy = this.next[1] - this.current[1],
         edgeLength = Math.sqrt(dx * dx + dy * dy);
 
-    return {
-        x: -dy / edgeLength,
-        y: dx / edgeLength
-    };
+    return [
+        -dy / edgeLength,
+        dx / edgeLength
+    ];
 };
 
 /**
@@ -620,18 +618,18 @@ Edge.prototype.offset = function(dx, dy) {
     var current = this.current,
         next = this.next;
 
-    return new Edge({
-        x: current.x + dx,
-        y: current.y + dy
-    }, {
-        x: next.x + dx,
-        y: next.y + dy
-    });
+    return new Edge([
+        current[0] + dx,
+        current[1] + dy
+    ], [
+        next[0] + dx,
+        next[1] + dy
+    ]);
 };
 
 module.exports = Edge;
 
-},{}],3:[function(require,module,exports){
+},{}],7:[function(_dereq_,module,exports){
 "use strict";
 
 /**
@@ -645,34 +643,34 @@ module.exports = Edge;
  * @return {Object|null}
  */
 module.exports = function intersection(A0, A1, B0, B1) {
-    var den = (B1.y - B0.y) * (A1.x - A0.x) -
-        (B1.x - B0.x) * (A1.y - A0.y);
+    var den = (B1[1] - B0[1]) * (A1[0] - A0[0]) -
+        (B1[0] - B0[0]) * (A1[1] - A0[1]);
 
     // lines are parallel or conincident
     if (den == 0) {
         return null;
     }
 
-    var ua = ((B1.x - B0.x) * (A0.y - B0.y) -
-        (B1.y - B0.y) * (A0.x - B0.x)) / den;
+    var ua = ((B1[0] - B0[0]) * (A0[1] - B0[1]) -
+        (B1[1] - B0[1]) * (A0[0] - B0[0])) / den;
 
-    var ub = ((A1.x - A0.x) * (A0.y - B0.y) -
-        (A1.y - A0.y) * (A0.x - B0.x)) / den;
+    var ub = ((A1[0] - A0[0]) * (A0[1] - B0[1]) -
+        (A1[1] - A0[1]) * (A0[0] - B0[0])) / den;
 
     if (ua < 0 || ub < 0 || ua > 1 || ub > 1) {
         return null;
     }
 
-    return {
-        x: A0.x + ua * (A1.x - A0.x),
-        y: A0.y + ua * (A1.y - A0.y)
-    };
+    return [
+        A0[0] + ua * (A1[0] - A0[0]),
+        A0[1] + ua * (A1[1] - A0[1])
+    ];
 };
 
-},{}],4:[function(require,module,exports){
-var GreinerHormann = require('greiner-hormann');
-var Edge = require('./edge');
-var intersection = require('./intersection');
+},{}],8:[function(_dereq_,module,exports){
+var GreinerHormann = _dereq_('greiner-hormann');
+var Edge = _dereq_('./edge');
+var intersection = _dereq_('./intersection');
 
 "use strict";
 
@@ -750,8 +748,8 @@ Offset.prototype.arcSegments = function(arcSegments) {
  */
 Offset.prototype.validate = function(vertices) {
     var len = vertices.length;
-    if (vertices[0].x === vertices[len - 1].x &&
-        vertices[0].y === vertices[len - 1].y) {
+    if (vertices[0][0] === vertices[len - 1][0] &&
+        vertices[0][1] === vertices[len - 1][1]) {
         vertices = vertices.slice(0, len - 1);
         this._closed = true;
     }
@@ -773,8 +771,8 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
     endVertex, segments, outwards) {
 
     var PI2 = Math.PI * 2,
-        startAngle = atan2(startVertex.y - center.y, startVertex.x - center.x),
-        endAngle = atan2(endVertex.y - center.y, endVertex.x - center.x);
+        startAngle = atan2(startVertex[1] - center[1], startVertex[0] - center[0]),
+        endAngle = atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
 
     // odd number please
     if (segments % 2 === 0) {
@@ -797,10 +795,10 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
     vertices.push(startVertex);
     for (var i = 1; i < segments; ++i) {
         angle = startAngle + segmentAngle * i;
-        vertices.push({
-            x: center.x + Math.cos(angle) * radius,
-            y: center.y + Math.sin(angle) * radius
-        });
+        vertices.push([
+            center[0] + Math.cos(angle) * radius,
+            center[1] + Math.sin(angle) * radius
+        ]);
     }
     vertices.push(endVertex);
 };
@@ -818,8 +816,8 @@ Offset.prototype.padding = function(dist) {
 
     for (i = 0, len = this.edges.length; i < len; i++) {
         var edge = this.edges[i],
-            dx = edge._outNormal.x * dist,
-            dy = edge._outNormal.y * dist;
+            dx = edge._outNormal[0] * dist,
+            dy = edge._outNormal[1] * dist;
         offsetEdges.push(edge.offset(dx, dy));
     }
 
@@ -863,8 +861,8 @@ Offset.prototype.margin = function(dist) {
         i, len, union;
     for (i = 0, len = this.edges.length; i < len; i++) {
         var edge = this.edges[i],
-            dx = edge._inNormal.x * dist,
-            dy = edge._inNormal.y * dist;
+            dx = edge._inNormal[0] * dist,
+            dy = edge._inNormal[1] * dist;
 
         offsetEdges.push(edge.offset(dx, dy));
     }
@@ -911,10 +909,10 @@ Offset.prototype.margin = function(dist) {
  */
 Offset.prototype.ensureLastPoint = function(vertices) {
     if (this._closed) {
-        vertices.push({
-            x: vertices[0].x,
-            y: vertices[0].y
-        });
+        vertices.push([
+            vertices[0][0],
+            vertices[0][1]
+        ]);
     }
     return vertices;
 };
@@ -933,5 +931,6 @@ Offset.prototype.offset = function(dist) {
 
 module.exports = Offset;
 
-},{"./edge":2,"./intersection":3,"greiner-hormann":1}]},{},[4])(4)
+},{"./edge":6,"./intersection":7,"greiner-hormann":2}]},{},[8])
+(8)
 });
