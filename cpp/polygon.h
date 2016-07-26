@@ -1,6 +1,6 @@
-#include<iostream>
-#include"point.h"
-#include<Vector>
+#include <iostream>
+#include "point.h"
+#include <Vector>
 using namespace std;
 #ifndef H_POLYGON
 #define H_POLYGON

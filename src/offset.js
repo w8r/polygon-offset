@@ -1,6 +1,7 @@
 var GreinerHormann = require('greiner-hormann');
 var Edge = require('./edge');
 var intersection = require('./intersection');
+var martinez = require('martinez-polygon-clipping');
 
 "use strict";
 
@@ -198,6 +199,13 @@ Offset.prototype.margin = function(dist) {
         offsetEdges.push(edge.offset(dx, dy));
     }
 
+    if (dist === 0) {
+        for (i = 0, len = offsetEdges.length; i < len; i++) {
+            vertices.push(offsetEdges[i].current, offsetEdges[i].next);
+        }
+        return vertices;
+    }
+
     for (i = 0, len = offsetEdges.length; i < len; i++) {
         var thisEdge = offsetEdges[i],
             prevEdge = offsetEdges[(i + len - 1) % len],
@@ -231,6 +239,11 @@ Offset.prototype.margin = function(dist) {
     // }
 
     vertices = this.ensureLastPoint(vertices);
+
+    //console.log(JSON.stringify(vertices, 0, 2));
+    console.time('martinez');
+    vertices = martinez.union([vertices], [JSON.parse(JSON.stringify(vertices))]);
+    console.timeEnd('martinez');
     return vertices;
 };
 
@@ -259,5 +272,8 @@ Offset.prototype.offset = function(dist) {
         this.vertices :
         (dist > 0 ? this.margin(dist) : this.padding(-dist));
 };
+
+
+Offset.lineOffset = require('./line_offset').offset;
 
 module.exports = Offset;

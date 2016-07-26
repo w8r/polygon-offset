@@ -1,32 +1,10 @@
-var L = require('leaflet');
 var Offset = require('../src/offset');
+require('./polygon_control');
+var OffsetControl = require('./offset_control');
+var data = require('../test/fixtures/polygon_polyline.json');
+var project = require('geojson-project');
 
-var points = [
-        [22.266574756525035, 114.18707728385925],
-        [22.26637618044986, 114.18727576732635],
-        [22.266693902034877, 114.187570810318],
-        [22.266718724003326, 114.18762981891632],
-        [22.2665846853214, 114.18781220912933],
-        [22.266435753301998, 114.18817162513733],
-        [22.26687758449714, 114.18833792209625],
-        [22.26690737081966, 114.18824672698975],
-        [22.266788225491567, 114.18818771839142],
-        [22.26680808305329, 114.18814480304718],
-        [22.26687758449714, 114.18817698955536],
-        [22.26689247765919, 114.18813407421112],
-        [22.266952050291525, 114.18818235397339],
-        [22.266991765365663, 114.18812334537506],
-        [22.266862691333507, 114.18804824352264],
-        [22.26701162289852, 114.18795168399811],
-        [22.26718041181389, 114.18813407421112],
-        [22.26696694344565, 114.18835937976837],
-        [22.267016587281276, 114.18842375278473],
-        [22.26739387985647, 114.18805897235869],
-        [22.267061266718283, 114.18762445449829],
-        [22.26695701467642, 114.18740451335907],
-        [22.26690240643301, 114.18745815753937]
-    ],
-    style = {
+var style = {
         weight: 3,
         color: '#48f',
         opacity: 0.8,
@@ -41,37 +19,119 @@ var points = [
         color: '#D81706'
     },
     center = [22.2670, 114.188],
-    zoom = 18,
+    zoom = 17,
     map, vertices, result;
 
-map = global.map = L.map('map').setView(center, zoom);
+map = global.map = L.map('map', {
+  editable: true,
+  maxZoom: 22,
+  crs: L.CRS.EPSG4326
+}).setView(center, zoom);
 
-L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; ' +
-        '<a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+map.addControl(new L.NewPolygonControl({
+  callback: map.editTools.startPolygon
+}));
+map.addControl(new L.NewLineControl({
+  callback: map.editTools.startPolyline
+}));
+
+var layers = global.layers = L.geoJson().addTo(map);
+var results = global.results = L.geoJson(null, {
+  style: function(feature) {
+    return marginStyle;
+  }
 }).addTo(map);
 
-L.polygon(points, style).addTo(map);
+map.addControl(new OffsetControl({
+  clear: function() {
+    layers.clearLayers();
+  },
+  callback: run
+}));
 
-
-vertices = points.map(function(p) {
-  var pt = map.options.crs.latLngToPoint(L.latLng(p), map.getZoom());
-  return [pt.x, pt.y];
+map.on('editable:created', function(evt) {
+  layers.addLayer(evt.layer);
+  evt.layer.on('click', function(e) {
+    if ((e.originalEvent.ctrlKey || e.originalEvent.metaKey) && this.editEnabled()) {
+      this.editor.newHole(e.latlng);
+    }
+  });
 });
 
-console.time('margin');
-result = new Offset(vertices).margin(40);
-console.timeEnd('margin');
-result = result.map(function(p) {
-    return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
-});
 
-L.polygon(result, marginStyle).addTo(map);
-console.time('padding');
-result = new Offset(vertices).padding(10);
-console.timeEnd('padding');
-result = result.map(function(p) {
-    return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
-});
+function run (margin) {
+  results.clearLayers();
+  layers.eachLayer(function(layer) {
+    var gj = layer.toGeoJSON();
+    console.log(gj, margin);
+    var shape = project(gj, function(coord) {
+      var pt = map.options.crs.latLngToPoint(L.latLng(coord.slice().reverse()), map.getZoom());
+      return [pt.x, pt.y];
+    });
 
-L.polygon(result, paddingStyle).addTo(map);
+    console.log(shape);
+    var margined;
+    if (gj.geometry.type === 'LineString') {
+      margined = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: Offset.lineOffset(shape.geometry.coordinates, margin)
+        }
+      };
+    } else {
+      margined = {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: new Offset(shape.geometry.coordinates[0]).margin(margin)
+        }
+      };
+    }
+
+console.log(margined);
+    results.addData(project(margined, function(pt) {
+      var ll = map.options.crs.pointToLatLng(L.point(pt.slice()), map.getZoom());
+      return [ll.lng, ll.lat];
+    }));
+  });
+}
+
+
+
+
+
+// var polygon = data.features[0];
+
+// // L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+// //     attribution: '&copy; ' +
+// //         '<a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+// // }).addTo(map);
+
+// console.log(polygon);
+
+// function project(ll) {
+//   var pt = map.options.crs.latLngToPoint(L.latLng(ll.slice().reverse()), map.getZoom());
+//   return [pt.x, pt.y];
+// }
+
+// vertices = polygon.geometry.coordinates[0].map(project);
+
+// console.time('margin');
+// result = new Offset(vertices).margin(40);
+// console.timeEnd('margin');
+// result = result.map(function(p) {
+//   return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
+// });
+
+// L.polygon(result, marginStyle).addTo(map);
+// console.time('padding');
+// result = new Offset(vertices).padding(10);
+// console.timeEnd('padding');
+// result = result.map(function(p) {
+//     return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
+// });
+
+// L.polygon(result, paddingStyle).addTo(layers);
+
+// var linePoints = data.features[1].geometry.coordinates.map(project);
