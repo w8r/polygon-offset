@@ -173,8 +173,9 @@ Offset.prototype.padding = function(dist) {
                 false);
         }
     }
-    union = GreinerHormann.union(vertices, vertices);
-    vertices = union ? union[0] : vertices;
+    // union = GreinerHormann.union(vertices, vertices);
+    // union = vertices;
+    // vertices = union ? union[0] : vertices;
 
     vertices = this.ensureLastPoint(vertices);
     return vertices;
@@ -222,12 +223,12 @@ Offset.prototype.margin = function(dist) {
         }
     }
 
-    union = GreinerHormann.union(vertices, vertices);
-    if (union) {
-        union = union[0];
-        // that's the toll
-        vertices = union.slice(0, union.length / 2);
-    }
+    // union = GreinerHormann.union(vertices, vertices);
+    // if (union) {
+    //     union = union[0];
+    //     // that's the toll
+    //     vertices = union.slice(0, union.length / 2);
+    // }
 
     vertices = this.ensureLastPoint(vertices);
     return vertices;
