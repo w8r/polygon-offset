@@ -18,6 +18,7 @@
     "leaflet": "^0.7.3",
     "less": "^2.0.0",
     "serve": "^1.4.0",
+    "tap": "^6.2.0",
     "watchify": "^2.1.1"
   },
   "scripts": {
@@ -27,8 +28,8 @@
     "build-css": "catw -c 'lessc -' 'example/*.less' > example/style.css",
     "build-js": "browserify -s Offset src/offset.js > dist/offset.js",
     "build": "npm run build-css && npm run build-js",
-    "start": "npm run watch & serve",
-    "test": "node test/test.js"
+    "start": "npm run watch & serve -p 3003",
+    "test": "tap test/test.js -R spec"
   },
   "repository": {
     "type": "git",

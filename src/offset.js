@@ -40,7 +40,7 @@ function Offset(vertices, arcSegments) {
      * Segments in edge bounding arches
      * @type {Number}
      */
-    this._arcSegments = arcSegments || 5;
+    this._arcSegments = arcSegments !== undefined ? arcSegments : 5;
 };
 
 /**
