@@ -2,6 +2,8 @@
 
 Small lib for polygon offsetting(margin/padding). See the [example](http://w8r.github.io/polygon-offset) of how it can be used with [Leaflet](http://leafletjs.com). It handles quite well oddly shaped and concave polygons.
 
+![screenshot 2016-07-27 19 05 53](https://cloud.githubusercontent.com/assets/26884/17184701/f2caf18c-542d-11e6-8cab-a63aee43aac8.png)
+
 The reason I wrote this is that the only working solution to this problem known to me is Angus Johnson's [Clipper](http://www.angusj.com/delphi/clipper.php) library. Library is huge and offsetting in it is subroutine.
 
 This library depends on [Martinez](http://github.com/w8r/martinez/) polygon clipping algorithm, and combined with it weighs ~14kb.
