@@ -8,12 +8,9 @@ clean:
 	@rm -rf dist/*
 
 dist/offset.js:
-	@browserify -s Offset src/offset.js > dist/offset.js;
+	@npm run build-js;
 
-dist/offset.only.js:
-	@browserify -s Offset -u greiner-hormann src/offset.js > dist/offset.only.js;
-
-sources: dist/offset.js dist/offset.only.js
+sources: dist/offset.js
 
 compile: ${COMPILED}
 

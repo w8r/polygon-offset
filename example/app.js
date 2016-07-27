@@ -1,4 +1,5 @@
 var Offset = require('../src/offset');
+require('./leaflet_multipolygon');
 require('./polygon_control');
 var OffsetControl = require('./offset_control');
 var data = require('../test/fixtures/polygon_polyline.json');
@@ -24,13 +25,14 @@ var style = {
 
 map = global.map = L.map('map', {
   editable: true,
-  maxZoom: 22,
-  crs: L.CRS.EPSG4326
+  maxZoom: 22
 }).setView(center, zoom);
+
 
 map.addControl(new L.NewPolygonControl({
   callback: map.editTools.startPolygon
 }));
+
 map.addControl(new L.NewLineControl({
   callback: map.editTools.startPolyline
 }));
@@ -64,19 +66,21 @@ function run (margin) {
   layers.eachLayer(function(layer) {
     var gj = layer.toGeoJSON();
     console.log(gj, margin);
+    if (margin === 0) return;
     var shape = project(gj, function(coord) {
       var pt = map.options.crs.latLngToPoint(L.latLng(coord.slice().reverse()), map.getZoom());
       return [pt.x, pt.y];
     });
 
-    console.log(shape);
     var margined;
     if (gj.geometry.type === 'LineString') {
+      if (margin < 0) return;
+      var res = new Offset(shape.geometry.coordinates).arcSegments(100).offsetLine(margin);
       margined = {
         type: 'Feature',
         geometry: {
-          type: 'LineString',
-          coordinates: Offset.lineOffset(shape.geometry.coordinates, margin)
+          type: 'Polygon',
+          coordinates: res
         }
       };
     } else {
@@ -84,12 +88,12 @@ function run (margin) {
         type: 'Feature',
         geometry: {
           type: 'Polygon',
-          coordinates: new Offset(shape.geometry.coordinates[0]).margin(margin)
+          coordinates: new Offset(shape.geometry.coordinates[0]).offset(margin)
         }
       };
     }
 
-console.log(margined);
+    console.log('margined', margined);
     results.addData(project(margined, function(pt) {
       var ll = map.options.crs.pointToLatLng(L.point(pt.slice()), map.getZoom());
       return [ll.lng, ll.lat];
@@ -97,16 +101,10 @@ console.log(margined);
   });
 }
 
-
-
-
-
-// var polygon = data.features[0];
-
-// // L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-// //     attribution: '&copy; ' +
-// //         '<a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-// // }).addTo(map);
+// L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+//   attribution: '&copy; ' +
+//     '<a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+// }).addTo(map);
 
 // console.log(polygon);
 
