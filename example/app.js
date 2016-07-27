@@ -5,6 +5,8 @@ var OffsetControl = require('./offset_control');
 var data = require('../test/fixtures/demo.json');
 var project = require('geojson-project');
 
+var arcSegments = 50;
+
 var style = {
         weight: 3,
         color: '#48f',
@@ -37,6 +39,10 @@ map.addControl(new L.NewLineControl({
   callback: map.editTools.startPolyline
 }));
 
+map.addControl(new L.NewPointControl({
+  callback: map.editTools.startMarker
+}));
+
 var layers = global.layers = L.geoJson(data).addTo(map);
 var results = global.results = L.geoJson(null, {
   style: function(feature) {
@@ -61,7 +67,6 @@ map.on('editable:created', function(evt) {
   });
 });
 
-
 function run (margin) {
   results.clearLayers();
   layers.eachLayer(function(layer) {
@@ -76,12 +81,22 @@ function run (margin) {
     var margined;
     if (gj.geometry.type === 'LineString') {
       if (margin < 0) return;
-      var res = new Offset(shape.geometry.coordinates).arcSegments(100).offsetLine(margin);
+      var res = new Offset(shape.geometry.coordinates).arcSegments(arcSegments).offsetLine(margin);
       margined = {
         type: 'Feature',
         geometry: {
           type: 'Polygon',
           coordinates: res
+        }
+      };
+    } else if (gj.geometry.type === 'Point') {
+      if (margin < 0) return;
+      var res = new Offset(shape.geometry.coordinates).arcSegments(arcSegments).offset(margin);
+      margined = {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [res]
         }
       };
     } else {

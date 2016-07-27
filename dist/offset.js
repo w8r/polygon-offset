@@ -1788,6 +1788,12 @@ function Offset(vertices, arcSegments) {
    */
   this._closed = false;
 
+
+  /**
+   * @type {Number}
+   */
+  this._distance = 0;
+
   if (vertices) {
       this.data(vertices);
   }
@@ -1807,15 +1813,18 @@ function Offset(vertices, arcSegments) {
 Offset.prototype.data = function(vertices) {
   vertices = this.validate(vertices);
 
-  var edges = [];
-  for (var i = 0, len = vertices.length; i < len; i++) {
-    edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
+  if (vertices.length > 1) {
+    var edges = [];
+    for (var i = 0, len = vertices.length; i < len; i++) {
+      edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
+    }
+    this.edges = edges;
   }
-
   this.vertices = vertices;
-  this.edges = edges;
+
   return this;
 };
+
 
 /**
  * @param  {Number} arcSegments
@@ -1826,6 +1835,7 @@ Offset.prototype.arcSegments = function(arcSegments) {
   return this;
 };
 
+
 /**
  * Validates if the first and last points repeat
  * TODO: check CCW
@@ -1834,13 +1844,17 @@ Offset.prototype.arcSegments = function(arcSegments) {
  */
 Offset.prototype.validate = function(vertices) {
   var len = vertices.length;
+  if (typeof vertices[0] === 'number') return [vertices];
   if (vertices[0][0] === vertices[len - 1][0] &&
     vertices[0][1] === vertices[len - 1][1]) {
-    vertices = vertices.slice(0, len - 1);
-    this._closed = true;
+    if (len > 1) {
+      vertices = vertices.slice(0, len - 1);
+      this._closed = true;
+    }
   }
   return vertices;
 };
+
 
 /**
  * Creates arch between two edges
@@ -1892,6 +1906,47 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
 
 
 /**
+ * @param  {Number}  dist
+ * @param  {String=} units
+ * @return {Offset}
+ */
+Offset.prototype.distance = function(dist, units) {
+  this._distance = dist || 0;
+  return this;
+};
+
+
+/**
+ * @static
+ * @param  {Number}  degrees
+ * @param  {String=} units
+ * @return {Number}
+ */
+Offset.degreesToUnits = function(degrees, units) {
+  switch (units) {
+    case 'miles':
+      degrees = degrees / 69.047;
+    break;
+    case 'feet':
+      degrees = degrees / 364568.0;
+      break;
+    case 'kilometers':
+      degrees = degrees / 111.12;
+      break;
+    case 'meters':
+    case 'metres':
+      degrees = degrees / 111120.0;
+      break;
+    case 'degrees':
+    case 'pixels':
+    default:
+      break;
+  }
+  return degrees;
+};
+
+
+/**
  * @param  {Array.<Object>} vertices
  * @return {Array.<Object>}
  */
@@ -1905,6 +1960,7 @@ Offset.prototype.ensureLastPoint = function(vertices) {
   return vertices;
 };
 
+
 /**
  * Decides by the sign if it's a padding or a margin
  *
@@ -1912,8 +1968,10 @@ Offset.prototype.ensureLastPoint = function(vertices) {
  * @return {Array.<Object>}
  */
 Offset.prototype.offset = function(dist) {
-  return dist === 0 ? this.vertices :
-      (dist > 0 ? this.margin(dist) : this.padding(-dist));
+  this.distance(dist);
+  return this._distance === 0 ? this.vertices :
+      (this._distance > 0 ? this.margin(this._distance) :
+        this.padding(-this._distance));
 };
 
 
@@ -1960,10 +2018,13 @@ Offset.prototype._offsetSegment = function(vertices, pt1, pt2, dist) {
  * @return {Array.<Number>}
  */
 Offset.prototype.margin = function(dist) {
+  this.distance(dist);
+
   if (dist === 0) return this.ensureLastPoint(this.vertices);
+  if (this.vertices.length === 1) return this.offsetPoint(this._distance);
 
   this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(dist);
+  var union = this.offsetLine(this._distance);
   union = martinez.union(union, [this.ensureLastPoint(this.vertices)]);
   return union;
 };
@@ -1974,10 +2035,13 @@ Offset.prototype.margin = function(dist) {
  * @return {Array.<Number>}
  */
 Offset.prototype.padding = function(dist) {
-  if (dist === 0) return this.ensureLastPoint(this.vertices);
+  this.distance(dist);
+
+  if (this._distance === 0) return this.ensureLastPoint(this.vertices);
+  if (this.vertices.length === 1) return this.vertices;
 
   this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(dist);
+  var union = this.offsetLine(this._distance);
   var diff = martinez.diff(this.vertices, union);
   return diff;
 };
@@ -1989,7 +2053,8 @@ Offset.prototype.padding = function(dist) {
  * @return {Array.<Object>}
  */
 Offset.prototype.offsetLine = function(dist) {
-  if (dist === 0) return this.vertices;
+  this.distance(dist);
+  if (this._distance === 0) return this.vertices;
 
   var vertices = [];
   var union    = [];
@@ -1997,13 +2062,37 @@ Offset.prototype.offsetLine = function(dist) {
 
   for (var i = 0, len = this.vertices.length - 1; i < len; i++) {
     var segment = this.ensureLastPoint(
-        this._offsetSegment([], this.vertices[i], this.vertices[i + 1], dist)
+        this._offsetSegment([], this.vertices[i], this.vertices[i + 1], this._distance)
     );
     vertices.push(segment);
     union = (i === 0) ? segment : martinez.union(union, segment);
   }
 
   return this.vertices.length > 2 ? union : [union];
+};
+
+
+/**
+ * @param  {Number} distance
+ * @return {Array.<Array.<Number>}
+ */
+Offset.prototype.offsetPoint = function(distance) {
+  this.distance(distance);
+  var vertices = this._arcSegments * 2;
+  var points   = [];
+  var center   = this.vertices[0];
+  var radius   = this._distance;
+  var angle    = 0;
+
+  for (var i = 0; i < vertices - 1; i++) {
+    angle += (2 * Math.PI / vertices); // counter-clockwise
+    points.push([
+      center[0] + (radius * Math.cos(angle)),
+      center[1] + (radius * Math.sin(angle))
+    ]);
+  }
+
+  return points;
 };
 
 module.exports = Offset;

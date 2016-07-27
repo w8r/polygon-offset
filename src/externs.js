@@ -10,12 +10,14 @@
  */
 window.require = function(o, u) {};
 
+
 /**
  * @type {Object}
  */
 window.module = {
     exports: {}
 };
+
 
 // this is for our lib
 
@@ -25,6 +27,7 @@ window.module = {
  */
 function Offset(v, s) {}
 
+
 /**
  * Change data set
  * @param  {Array.<Array>} vertices
@@ -32,11 +35,13 @@ function Offset(v, s) {}
  */
 Offset.prototype.data = function(vertices) {};
 
+
 /**
  * @param  {Number} arcSegments
  * @return {Offset}
  */
 Offset.prototype.arcSegments = function(arcSegments) {};
+
 
 /**
  * Create padding polygon
@@ -46,12 +51,30 @@ Offset.prototype.arcSegments = function(arcSegments) {};
  */
 Offset.prototype.padding = function(dist) {};
 
+
+/**
+ * @param  {Number} dist
+ * @return {Offset}
+ */
+Offset.prototype.distance = function(dist) {};
+
+
+/**
+ * @static
+ * @param  {Number}  degrees
+ * @param  {String=} units
+ * @return {Number}
+ */
+Offset.degreesToUnits = function(degrees, units) {};
+
+
 /**
  * Creates margin polygon
  * @param  {Number} dist
  * @return {Array.<Object>}
  */
 Offset.prototype.margin = function(dist) {};
+
 
 /**
  * Decides by the sign if it's a padding or a margin

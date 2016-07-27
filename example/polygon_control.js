@@ -39,3 +39,11 @@ L.NewLineControl = L.EditControl.extend({
     html: '/'
   }
 });
+
+L.NewPointControl = L.EditControl.extend({
+  options: {
+    position: 'topleft',
+    kind: 'point',
+    html: '&#9679;'
+  }
+});
