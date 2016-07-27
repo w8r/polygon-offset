@@ -21,6 +21,7 @@ module.exports = L.Control.extend({
         '</div>', '<br>',
         '<input type="submit" value="Run">', '<input name="clear" type="button" value="Clear layers">',
       '</form>'].join('');
+
     var form = container.querySelector('form');
     L.DomEvent
       .on(form, 'submit', function (evt) {

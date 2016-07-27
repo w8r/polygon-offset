@@ -43,24 +43,28 @@ var padding = offset.data(points).padding(10);
 // decides from the sign of x: negative for padding
 var unknown = offset.data(points).arcSegments(3).offset(x);
 
+// if you want to work with the polyline - margin only
+var polyline = offset.data(points).offsetLine(5);
+
 ```
 
 ## Dependencies
 
-[Greiner-Hormann](http://w8r.github.io/GreinerHormann) clipping algorithm
+[Martinez](http://w8r.github.io/martinez) clipping algorithm
 
 ## Development
 
 ```bash
 $ npm install
 $ npm start
-$ open http://localhost:3000
+$ open http://localhost:3003
 $ make
+$ npm test
 ```
 
 Build
 
-To compile the lib with Google Closure Compiler with ADVANCED_OPTIMIZATIONS
+To compile the lib with Google Closure Compiler with `ADVANCED_OPTIMIZATIONS`
 
 ```bash
 $ make
@@ -75,7 +79,7 @@ $ make
 
 The MIT License (MIT)
 
-Copyright (c) 2015 Alexander Milevski
+Copyright (c) 2016 Alexander Milevski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
