@@ -23,7 +23,7 @@ window.module = {
  * @param {Array.<Object>} v
  * @param {number=}        s
  */
-function Offset(v, s) {};
+function Offset(v, s) {}
 
 /**
  * Change data set
@@ -61,12 +61,21 @@ Offset.prototype.margin = function(dist) {};
  */
 Offset.prototype.offset = function(dist) {};
 
+
+/**
+ * Decides by the sign if it's a padding or a margin
+ *
+ * @param  {Number} dist
+ * @return {Array.<Object>}
+ */
+Offset.prototype.offsetLine = function(dist) {};
+
 // this is for clipper
 
 /**
  * @type {Object}
  */
-window.greinerHormann = {
+window.martinez = {
 
     /**
      * @api
@@ -74,15 +83,7 @@ window.greinerHormann = {
      * @param  {Array.<Array.<Number>} polygonB
      * @return {Array.<Array.<Number>>|Null}
      */
-    clip: function(polygonA, polygonB) {},
-
-    /**
-     * @api
-     * @param  {Array.<Array.<Number>} polygonA
-     * @param  {Array.<Array.<Number>} polygonB
-     * @return {Array.<Array.<Number>>|Null}
-     */
-    diff: function(polygonA, polygonBpolygonA, polygonB) {},
+    diff: function(polygonA, polygonB) {},
 
     /**
      * @api
