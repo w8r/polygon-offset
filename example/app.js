@@ -2,7 +2,7 @@ var Offset = require('../src/offset');
 require('./leaflet_multipolygon');
 require('./polygon_control');
 var OffsetControl = require('./offset_control');
-var data = require('../test/fixtures/polygon_polyline.json');
+var data = require('../test/fixtures/demo.json');
 var project = require('geojson-project');
 
 var style = {
@@ -37,12 +37,13 @@ map.addControl(new L.NewLineControl({
   callback: map.editTools.startPolyline
 }));
 
-var layers = global.layers = L.geoJson().addTo(map);
+var layers = global.layers = L.geoJson(data).addTo(map);
 var results = global.results = L.geoJson(null, {
   style: function(feature) {
     return marginStyle;
   }
 }).addTo(map);
+map.fitBounds(layers.getBounds(), { animate: false });
 
 map.addControl(new OffsetControl({
   clear: function() {
@@ -101,35 +102,4 @@ function run (margin) {
   });
 }
 
-// L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-//   attribution: '&copy; ' +
-//     '<a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-// }).addTo(map);
-
-// console.log(polygon);
-
-// function project(ll) {
-//   var pt = map.options.crs.latLngToPoint(L.latLng(ll.slice().reverse()), map.getZoom());
-//   return [pt.x, pt.y];
-// }
-
-// vertices = polygon.geometry.coordinates[0].map(project);
-
-// console.time('margin');
-// result = new Offset(vertices).margin(40);
-// console.timeEnd('margin');
-// result = result.map(function(p) {
-//   return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
-// });
-
-// L.polygon(result, marginStyle).addTo(map);
-// console.time('padding');
-// result = new Offset(vertices).padding(10);
-// console.timeEnd('padding');
-// result = result.map(function(p) {
-//     return map.options.crs.pointToLatLng(L.point(p), map.getZoom());
-// });
-
-// L.polygon(result, paddingStyle).addTo(layers);
-
-// var linePoints = data.features[1].geometry.coordinates.map(project);
+run (20);

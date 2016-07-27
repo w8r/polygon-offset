@@ -1,10 +1,10 @@
-# Offset [![npm version](https://badge.fury.io/js/polygon-offset.svg)](https://badge.fury.io/js/polygon-offset)
+# Offset [![npm version](https://badge.fury.io/js/polygon-offset.svg)](https://badge.fury.io/js/polygon-offset) [![CircleCI](https://circleci.com/gh/w8r/polygon-offset.svg?style=svg)](https://circleci.com/gh/w8r/polygon-offset)
 
 Small lib for polygon offsetting(margin/padding). See the [example](http://w8r.github.io/polygon-offset) of how it can be used with [Leaflet](http://leafletjs.com). It handles quite well oddly shaped and concave polygons.
 
 The reason I wrote this is that the only working solution to this problem known to me is Angus Johnson's [Clipper](http://www.angusj.com/delphi/clipper.php) library. Library is huge and offsetting in it is subroutine.
 
-This library depends on [Greiner-Hormann](http://w8r.github.io/GreinerHormann) polygon clipping algorithm, and combined with it weighs ~6kb.
+This library depends on [Martinez](http://github.com/w8r/martinez/) polygon clipping algorithm, and combined with it weighs ~14kb.
 
 ## Install
 
@@ -50,7 +50,7 @@ var polyline = offset.data(points).offsetLine(5);
 
 ## Dependencies
 
-[Martinez](http://w8r.github.io/martinez) clipping algorithm
+[Martinez](https://github.com/w8r/martinez/) clipping algorithm
 
 ## Development
 
