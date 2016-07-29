@@ -104,7 +104,7 @@ function run (margin) {
         type: 'Feature',
         geometry: {
           type: 'Polygon',
-          coordinates: new Offset(shape.geometry.coordinates[0]).offset(margin)
+          coordinates: new Offset(shape.geometry.coordinates).offset(margin)
         }
       };
     }

@@ -1,5 +1,6 @@
 var tap = require('tap');
 var Offset = require('../src/offset');
+var Edge = require('../src/edge');
 
 
 // CCW
@@ -12,7 +13,17 @@ var x = -10;
 
 tap.test('polygon.offset', function(t) {
 
+  t.test('edge', function(t) {
+    var e = new Edge([0,0], [0,5]);
+    t.strictSame(e.current, [0, 0], 'current');
+    t.strictSame(e.next, [0, 5], 'next');
+    t.strictSame(e._inNormal, [ -1, 0], 'inwards normal');
+    t.strictSame(e._outNormal, [1, 0],   'outwards normal');
+    t.end();
+  });
+
   t.test('data', function(t) {
+    t.throws(function() { return new Offset(1); }, 'throws at invalid input');
     t.strictSame(new Offset(points).vertices, points.slice(0, points.length - 1), 'read');
     //t.strictSame(new Offset(points).vertices, points, 'stored');
     t.end();

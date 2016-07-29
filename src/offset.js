@@ -3,6 +3,10 @@ var martinez = global.martinez = require('martinez-polygon-clipping');
 
 var atan2 = Math.atan2;
 
+var isArray = Array.isArray || function (arr) {
+  return Object.prototype.toString.call(arr) === '[object Array]';
+};
+
 /**
  * Offset builder
  *
@@ -50,6 +54,7 @@ function Offset(vertices, arcSegments) {
  * @return {Offset}
  */
 Offset.prototype.data = function(vertices) {
+
   vertices = this.validate(vertices);
 
   if (vertices.length > 1) {
@@ -62,6 +67,38 @@ Offset.prototype.data = function(vertices) {
   this.vertices = vertices;
 
   return this;
+};
+
+
+Offset.prototype.data = function(vertices) {
+  this._edges = [];
+  if (!isArray (vertices)) {
+    throw new Error('Offset requires at least one coodinate to work with');
+  }
+
+  if (isArray(vertices) && typeof vertices[0] === 'number') {
+    this.vertices = vertices;
+  } else {
+    this.vertices = vertices;
+    this._processContour(vertices, this._edges);
+  }
+};
+
+
+Offset.prototype._processContour = function(contour, edges) {
+  var i, len;
+  // console.log(contour, edges, isArray(contour[0]), contour[0][0]);
+  if (isArray(contour[0]) && typeof contour[0][0] === 'number') {
+    for (i = 0, len = contour.length; i < len; i++) {
+      edges.push(new Edge(contour[i], contour[(i + 1) % len]));
+    }
+  } else {
+    var processed = [];
+    for (i = 0, len = contour.length; i < len; i++) {
+      this._processContour(contour[i], processed);
+    }
+    edges.push(processed);
+  }
 };
 
 
@@ -252,6 +289,35 @@ Offset.prototype._offsetSegment = function(vertices, pt1, pt2, dist) {
 };
 
 
+Offset.prototype._offsetSegment = function(v1, v2, e1, e2, dist) {
+  var vertices = [];
+  var edges    = [e1, e2];
+
+  var offsets = [
+    e1.offset(e1._inNormal[0] * dist, e1._inNormal[1] * dist),
+    e2.offset(e2._inNormal[0] * dist, e2._inNormal[1] * dist)
+  ];
+
+  console.log(offsets);
+
+  for (var i = 0, len = 2; i < len; i++) {
+    var thisEdge = offsets[i],
+        prevEdge = offsets[(i + len - 1) % len];
+    this.createArc(
+              vertices,
+              edges[i].current, // p1 or p2
+              dist,
+              prevEdge.next,
+              thisEdge.current,
+              this._arcSegments,
+              true
+            );
+  }
+
+  return vertices;
+};
+
+
 /**
  * @param  {Number} dist
  * @return {Array.<Number>}
@@ -260,10 +326,14 @@ Offset.prototype.margin = function(dist) {
   this.distance(dist);
 
   if (dist === 0) return this.ensureLastPoint(this.vertices);
-  if (this.vertices.length === 1) return this.offsetPoint(this._distance);
+  if (this.vertices.length === 1 &&
+      typeof this.vertices[0] === 'number') { // point
+    return this.offsetPoint(this._distance);
+  }
 
-  this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(this._distance);
+  //this.ensureLastPoint(this.vertices);
+  return this.offsetLines(this._distance);
+  var union = this.offsetLines(this._distance);
   union = martinez.union(union, [this.ensureLastPoint(this.vertices)]);
   return union;
 };
@@ -280,7 +350,7 @@ Offset.prototype.padding = function(dist) {
   if (this.vertices.length === 1) return this.vertices;
 
   this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(this._distance);
+  var union = this.offsetLines(this._distance);
   var diff = martinez.diff(this.vertices, union);
   return diff;
 };
@@ -308,6 +378,44 @@ Offset.prototype.offsetLine = function(dist) {
   }
 
   return this.vertices.length > 2 ? union : [union];
+};
+
+
+Offset.prototype.offsetLines = function(dist) {
+  this.distance(dist);
+  var union = [];
+  if (isArray(this.vertices[0])) {
+    for (var i = 0, len = this._edges.length; i < len; i++) {
+      union = (i === 0) ?
+        this.offsetContour(this.vertices[i], this._edges[i]):
+        martinez.union(union, this.offsetContour(this.vertices[i], this._edges[i]));
+    }
+  } else {
+    union = this.offsetContour(this.data, this.edges);
+  }
+  return union;
+};
+
+
+Offset.prototype.offsetContour = function(curve, edges) {
+  console.log('offset contour', curve);
+  var union;
+  if (isArray(curve[0]) && typeof curve[0][0] === 'number') {
+    for (var i = 0, len = curve.length - 1; i < len; i++) {
+      var segment = this.ensureLastPoint(
+        this._offsetSegment(curve[i], curve[i + 1], edges[i], edges[i + 1], this._distance)
+      );
+      console.log('segment', segment, union);
+      union = (i === 0) ? segment : martinez.union(union, segment);
+    }
+  } else {
+    for (var i = 0, len = curve.length; i < len; i++) {
+      union = (i === 0) ?
+        this.offsetContour(curve[i], edges[i]) :
+        martinez.union(union, this.offsetContour(curve[i], edges[i]));
+    }
+  }
+  return union;
 };
 
 
