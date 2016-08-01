@@ -67,7 +67,6 @@ Offset.prototype.distance = function(dist) {};
  */
 Offset.degreesToUnits = function(degrees, units) {};
 
-
 /**
  * Creates margin polygon
  * @param  {Number} dist
@@ -91,7 +90,7 @@ Offset.prototype.offset = function(dist) {};
  * @param  {Number} dist
  * @return {Array.<Object>}
  */
-Offset.prototype.offsetLine = function(dist) {};
+Offset.prototype.offsetLines = function(dist) {};
 
 // this is for clipper
 
