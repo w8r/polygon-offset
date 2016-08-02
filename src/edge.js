@@ -3,7 +3,7 @@
  *
  * @param  {Object} current
  * @param  {Object} next
- * @cosntructor
+ * @constructor
  */
 function Edge(current, next) {
 
@@ -20,7 +20,7 @@ function Edge(current, next) {
   /**
    * @type {Object}
    */
-  this._inNormal = this.inwardsNormal();
+  this._inNormal  = this.inwardsNormal();
 
   /**
    * @type {Object}
@@ -49,6 +49,8 @@ Edge.prototype.inwardsNormal = function() {
       dy = this.next[1] - this.current[1],
       edgeLength = Math.sqrt(dx * dx + dy * dy);
 
+  if (edgeLength === 0) throw new Error('Vertices overlap');
+
   return [
     -dy / edgeLength,
      dx / edgeLength
@@ -62,9 +64,29 @@ Edge.prototype.inwardsNormal = function() {
  * @return {Edge}
  */
 Edge.prototype.offset = function(dx, dy) {
-  var current = this.current,
-      next = this.next;
+  return Edge.offsetEdge(this.current, this.next, dx, dy);
+};
 
+
+/**
+ * @param  {Number} dx
+ * @param  {Number} dy
+ * @return {Edge}
+ */
+Edge.prototype.inverseOffset = function(dx, dy) {
+  return Edge.offsetEdge(this.next, this.current, dx, dy);
+};
+
+
+/**
+ * @static
+ * @param  {Array.<Number>} current
+ * @param  {Array.<Number>} next
+ * @param  {Number}         dx
+ * @param  {Number}         dy
+ * @return {Edge}
+ */
+Edge.offsetEdge = function(current, next, dx, dy) {
   return new Edge([
     current[0] + dx,
     current[1] + dy
@@ -73,5 +95,15 @@ Edge.prototype.offset = function(dx, dy) {
     next[1] + dy
   ]);
 };
+
+
+/**
+ *
+ * @return {Edge}
+ */
+Edge.prototype.inverse = function () {
+  return new Edge(this.next, this.current);
+};
+
 
 module.exports = Edge;

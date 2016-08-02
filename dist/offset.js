@@ -572,6 +572,7 @@ module.exports = require('./src/index');
 
 },{"./src/index":10}],6:[function(require,module,exports){
 var signedArea = require('./signed_area');
+var equals = require('./equals');
 
 /**
  * @param  {SweepEvent} e1
@@ -608,19 +609,21 @@ function specialCases(e1, e2, p1, p2) {
     return (!e1.isBelow(e2.otherEvent.point)) ? 1 : -1;
   }
 
-  if (e1.isSubject === e2.isSubject) {
-    if(e1.contourId === e2.contourId){
-      return 0;
-    } else {
-      return e1.contourId > e2.contourId ? 1 : -1;
-    }
-  }
-
   return (!e1.isSubject && e2.isSubject) ? 1 : -1;
-  //return e1.isSubject ? -1 : 1;
+
+  // uncomment this if you want to play with multipolygons
+  // if (e1.isSubject === e2.isSubject) {
+  //   if(equals(e1.point, e2.point) && e1.contourId === e2.contourId) {
+  //     return 0;
+  //   } else {
+  //     return e1.contourId > e2.contourId ? 1 : -1;
+  //   }
+  // }
+  //
+  // return e1.isSubject ? -1 : 1;
 }
 
-},{"./signed_area":12}],7:[function(require,module,exports){
+},{"./equals":9,"./signed_area":12}],7:[function(require,module,exports){
 var signedArea    = require('./signed_area');
 var compareEvents = require('./compare_events');
 var equals        = require('./equals');
@@ -653,17 +656,16 @@ module.exports = function compareSegments(le1, le2) {
     return le1.isBelow(le2.point) ? -1 : 1;
   }
 
-  if (le1.isSubject === le2.isSubject){
+  if (le1.isSubject === le2.isSubject) { // same polygon
     if (equals(le1.point, le2.point)) {
-      if (le1.contourId === le2.contourId){
+      if (equals(le1.otherEvent.point, le2.otherEvent.point)) {
         return 0;
       } else {
         return le1.contourId > le2.contourId ? 1 : -1;
       }
-    } else {
-      // Segments are collinear
-      if (le1.isSubject !== le2.isSubject) return (le1.isSubject && !le2.isSubject) ? 1 : -1;
     }
+  } else { // Segments are collinear, but belong to separate polygons
+    return le1.isSubject ? -1 : 1;
   }
 
   return compareEvents(le1, le2) === 1 ? 1 : -1;
@@ -702,6 +704,11 @@ var equals          = require('./equals');
 
 var max = Math.max;
 var min = Math.min;
+
+// global.Tree = Tree;
+// global.compareSegments = compareSegments;
+// global.SweepEvent = SweepEvent;
+// global.signedArea = require('./signed_area');
 
 /**
  * @param  {<Array.<Number>} s1
@@ -935,6 +942,12 @@ function divideSegment(se, p, queue)  {
   var r = new SweepEvent(p, false, se,            se.isSubject);
   var l = new SweepEvent(p, true,  se.otherEvent, se.isSubject);
 
+  if (equals(se.point, se.otherEvent.point)) {
+    console.warn('what is that?', se);
+  }
+
+  r.contourId = l.contourId = se.contourId;
+
   // avoid a rounding error. The left event would be processed after the right event
   if (compareEvents(l, se.otherEvent) > 0) {
     se.otherEvent.left = true;
@@ -1006,17 +1019,25 @@ function subdivideSegments(eventQueue, subject, clipping, sbbox, cbbox, operatio
     }
 
     if (event.left) {
-      sweepLine.insert(event);
+      var ins = sweepLine.insert(event);
       // _renderSweepLine(sweepLine, event.point, event);
 
       next = sweepLine.findIter(event);
       prev = sweepLine.findIter(event);
       event.iterator = sweepLine.findIter(event);
 
+      // Cannot get out of the tree what we just put there
+      if (!prev || !next) {
+        var iterators = findIterBrute(sweepLine);
+        prev = iterators[0];
+        next = iterators[1];
+      }
+
       if (prev.data() !== sweepLine.min()) {
         prev.prev();
       } else {
-        prev = sweepLine.findIter(sweepLine.max());
+        prev = sweepLine.iterator(); //findIter(sweepLine.max());
+        prev.prev();
         prev.next();
       }
       next.next();
@@ -1055,7 +1076,8 @@ function subdivideSegments(eventQueue, subject, clipping, sbbox, cbbox, operatio
       if (prev.data() !== sweepLine.min()) {
         prev.prev();
       } else {
-        prev = sweepLine.findIter(sweepLine.max());
+        prev = sweepLine.iterator();
+        prev.prev(); // sweepLine.findIter(sweepLine.max());
         prev.next();
       }
       next.next();
@@ -1069,6 +1091,20 @@ function subdivideSegments(eventQueue, subject, clipping, sbbox, cbbox, operatio
     }
   }
   return sortedEvents;
+}
+
+function findIterBrute(sweepLine, q) {
+  var prev = sweepLine.iterator();
+  var next = sweepLine.iterator();
+  var it   = sweepLine.iterator(), data;
+  while((data = it.next()) !== null) {
+    prev.next();
+    next.next();
+    if (data === event) {
+      break;
+    }
+  }
+  return [prev, next];
 }
 
 
@@ -1098,11 +1134,13 @@ function addHole(contour, idx) {
 }
 
 
-function connectEdges(sortedEvents) {
-  // copy the events in the result polygon to resultEvents array
+/**
+ * @param  {Array.<SweepEvent>} sortedEvents
+ * @return {Array.<SweepEvent>}
+ */
+function orderEvents(sortedEvents) {
+  var i, len;
   var resultEvents = [];
-  var event, i, len;
-
   for (i = 0, len = sortedEvents.length; i < len; i++) {
     event = sortedEvents[i];
     if ((event.left && event.inResult) ||
@@ -1126,12 +1164,28 @@ function connectEdges(sortedEvents) {
 
   for (i = 0, len = resultEvents.length; i < len; i++) {
     resultEvents[i].pos = i;
+  }
+
+  for (i = 0, len = resultEvents.length; i < len; i++) {
     if (!resultEvents[i].left) {
       var temp = resultEvents[i].pos;
       resultEvents[i].pos = resultEvents[i].otherEvent.pos;
       resultEvents[i].otherEvent.pos = temp;
     }
   }
+
+  return resultEvents;
+}
+
+
+/**
+ * @param  {Array.<SweepEvent>} sortedEvents
+ * @return {Array.<*>} polygons
+ */
+function connectEdges(sortedEvents) {
+  var event, i, len;
+  var resultEvents = orderEvents(sortedEvents);
+
 
   // "false"-filled array
   var processed = Array(resultEvents.length);
@@ -1194,8 +1248,6 @@ function connectEdges(sortedEvents) {
     processed[pos] = processed[resultEvents[pos].pos] = true;
     resultEvents[pos].otherEvent.resultInOut = true;
     resultEvents[pos].otherEvent.contourId   = contourId;
-
-
 
 
     // depth is even
@@ -1684,7 +1736,7 @@ function swap(data, i, j) {
  *
  * @param  {Object} current
  * @param  {Object} next
- * @cosntructor
+ * @constructor
  */
 function Edge(current, next) {
 
@@ -1701,7 +1753,7 @@ function Edge(current, next) {
   /**
    * @type {Object}
    */
-  this._inNormal = this.inwardsNormal();
+  this._inNormal  = this.inwardsNormal();
 
   /**
    * @type {Object}
@@ -1730,6 +1782,8 @@ Edge.prototype.inwardsNormal = function() {
       dy = this.next[1] - this.current[1],
       edgeLength = Math.sqrt(dx * dx + dy * dy);
 
+  if (edgeLength === 0) throw new Error('Vertices overlap');
+
   return [
     -dy / edgeLength,
      dx / edgeLength
@@ -1743,9 +1797,29 @@ Edge.prototype.inwardsNormal = function() {
  * @return {Edge}
  */
 Edge.prototype.offset = function(dx, dy) {
-  var current = this.current,
-      next = this.next;
+  return Edge.offsetEdge(this.current, this.next, dx, dy);
+};
 
+
+/**
+ * @param  {Number} dx
+ * @param  {Number} dy
+ * @return {Edge}
+ */
+Edge.prototype.inverseOffset = function(dx, dy) {
+  return Edge.offsetEdge(this.next, this.current, dx, dy);
+};
+
+
+/**
+ * @static
+ * @param  {Array.<Number>} current
+ * @param  {Array.<Number>} next
+ * @param  {Number}         dx
+ * @param  {Number}         dy
+ * @return {Edge}
+ */
+Edge.offsetEdge = function(current, next, dx, dy) {
   return new Edge([
     current[0] + dx,
     current[1] + dy
@@ -1755,14 +1829,28 @@ Edge.prototype.offset = function(dx, dy) {
   ]);
 };
 
+
+/**
+ *
+ * @return {Edge}
+ */
+Edge.prototype.inverse = function () {
+  return new Edge(this.next, this.current);
+};
+
+
 module.exports = Edge;
 
 },{}],16:[function(require,module,exports){
-(function (global){
-var Edge = require('./edge');
-var martinez = global.martinez = require('martinez-polygon-clipping');
+var Edge     = require('./edge');
+var martinez = require('martinez-polygon-clipping');
+var utils    = require('./utils');
 
-var atan2 = Math.atan2;
+
+var isArray     = utils.isArray;
+var equals      = utils.equals;
+var orientRings = utils.orientRings;
+
 
 /**
  * Offset builder
@@ -1795,7 +1883,7 @@ function Offset(vertices, arcSegments) {
   this._distance = 0;
 
   if (vertices) {
-      this.data(vertices);
+    this.data(vertices);
   }
 
   /**
@@ -1811,18 +1899,43 @@ function Offset(vertices, arcSegments) {
  * @return {Offset}
  */
 Offset.prototype.data = function(vertices) {
-  vertices = this.validate(vertices);
-
-  if (vertices.length > 1) {
-    var edges = [];
-    for (var i = 0, len = vertices.length; i < len; i++) {
-      edges.push(new Edge(vertices[i], vertices[(i + 1) % len]));
-    }
-    this.edges = edges;
+  this._edges = [];
+  if (!isArray (vertices)) {
+    throw new Error('Offset requires at least one coodinate to work with');
   }
-  this.vertices = vertices;
+
+  if (isArray(vertices) && typeof vertices[0] === 'number') {
+    this.vertices = vertices;
+  } else {
+    this.vertices = orientRings(vertices);
+    this._processContour(this.vertices, this._edges);
+  }
 
   return this;
+};
+
+
+/**
+ * Recursively process contour to create normals
+ * @param  {*} contour
+ * @param  {Array} edges
+ */
+Offset.prototype._processContour = function(contour, edges) {
+  var i, len;
+  if (isArray(contour[0]) && typeof contour[0][0] === 'number') {
+    len = contour.length;
+    if (equals(contour[0], contour[len - 1])) {
+      len -= 1; // otherwise we get division by zero in normals
+    }
+    for (i = 0; i < len; i++) {
+      edges.push(new Edge(contour[i], contour[(i + 1) % len]));
+    }
+  } else {
+    for (i = 0, len = contour.length; i < len; i++) {
+      edges.push([]);
+      this._processContour(contour[i], edges[edges.length - 1]);
+    }
+  }
 };
 
 
@@ -1871,8 +1984,8 @@ Offset.prototype.createArc = function(vertices, center, radius, startVertex,
     endVertex, segments, outwards) {
 
   var PI2 = Math.PI * 2,
-      startAngle = atan2(startVertex[1] - center[1], startVertex[0] - center[0]),
-      endAngle = atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
+      startAngle = Math.atan2(startVertex[1] - center[1], startVertex[0] - center[0]),
+      endAngle   = Math.atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
 
   // odd number please
   if (segments % 2 === 0) {
@@ -1951,7 +2064,7 @@ Offset.degreesToUnits = function(degrees, units) {
  * @return {Array.<Object>}
  */
 Offset.prototype.ensureLastPoint = function(vertices) {
-  if (this._closed) {
+  if (!equals(vertices[0], vertices[vertices.length - 1])) {
     vertices.push([
       vertices[0][0],
       vertices[0][1]
@@ -1982,33 +2095,27 @@ Offset.prototype.offset = function(dist) {
  * @param  {Number}                 dist
  * @return {Array.<Array.<Number>>}
  */
-Offset.prototype._offsetSegment = function(vertices, pt1, pt2, dist) {
-  var edges = [new Edge(pt1, pt2), new Edge(pt2, pt1)];
-  var i, len = 2;
+Offset.prototype._offsetSegment = function(v1, v2, e1, dist) {
+  var vertices = [];
+  var offsets = [
+    e1.offset(e1._inNormal[0] * dist, e1._inNormal[1] * dist),
+    e1.inverseOffset(e1._outNormal[0] * dist, e1._outNormal[1] * dist)
+  ];
 
-  var offsets = [];
-
-  for (i = 0; i < len; i++) {
-    var edge = edges[i];
-    var dx = edge._inNormal[0] * dist;
-    var dy = edge._inNormal[1] * dist;
-
-    offsets.push(edge.offset(dx, dy));
-  }
-
-  for (i = 0; i < len; i++) {
+  for (var i = 0, len = 2; i < len; i++) {
     var thisEdge = offsets[i],
         prevEdge = offsets[(i + len - 1) % len];
     this.createArc(
-                vertices,
-                edges[i].current, // p1 or p2
-                dist,
-                prevEdge.next,
-                thisEdge.current,
-                this._arcSegments,
-                true
+              vertices,
+              i === 0 ? v1 : v2, // edges[i].current, // p1 or p2
+              dist,
+              prevEdge.next,
+              thisEdge.current,
+              this._arcSegments,
+              true
             );
   }
+
   return vertices;
 };
 
@@ -2020,13 +2127,16 @@ Offset.prototype._offsetSegment = function(vertices, pt1, pt2, dist) {
 Offset.prototype.margin = function(dist) {
   this.distance(dist);
 
-  if (dist === 0) return this.ensureLastPoint(this.vertices);
-  if (this.vertices.length === 1) return this.offsetPoint(this._distance);
+  if (typeof this.vertices[0] === 'number') { // point
+    return this.offsetPoint(this._distance);
+  }
 
-  this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(this._distance);
-  union = martinez.union(union, [this.ensureLastPoint(this.vertices)]);
-  return union;
+  if (dist === 0) return this.vertices;
+
+  var union = this.offsetLines(this._distance);
+  //return union;
+  union = martinez.union(this.vertices, union);
+  return orientRings(union);
 };
 
 
@@ -2038,12 +2148,13 @@ Offset.prototype.padding = function(dist) {
   this.distance(dist);
 
   if (this._distance === 0) return this.ensureLastPoint(this.vertices);
-  if (this.vertices.length === 1) return this.vertices;
+  if (this.vertices.length === 2 && typeof this.vertices[0] === 'number') {
+    return this.vertices;
+  }
 
-  this.ensureLastPoint(this.vertices);
-  var union = this.offsetLine(this._distance);
+  var union = this.offsetLines(this._distance);
   var diff = martinez.diff(this.vertices, union);
-  return diff;
+  return orientRings(diff);
 };
 
 
@@ -2053,22 +2164,61 @@ Offset.prototype.padding = function(dist) {
  * @return {Array.<Object>}
  */
 Offset.prototype.offsetLine = function(dist) {
+  if (dist === 0) return this.vertices;
+  return orientRings(this.offsetLines(dist));
+};
+
+
+/**
+ * Just offsets lines, no fill
+ * @param  {Number} dist
+ * @return {Array.<Array.<Array.<Number>>>}
+ */
+Offset.prototype.offsetLines = function(dist) {
+  if (dist < 0) throw new Error('Cannot apply negative margin to the line');
+  var union;
   this.distance(dist);
-  if (this._distance === 0) return this.vertices;
-
-  var vertices = [];
-  var union    = [];
-  this._closed = true;
-
-  for (var i = 0, len = this.vertices.length - 1; i < len; i++) {
-    var segment = this.ensureLastPoint(
-        this._offsetSegment([], this.vertices[i], this.vertices[i + 1], this._distance)
-    );
-    vertices.push(segment);
-    union = (i === 0) ? segment : martinez.union(union, segment);
+  if (isArray(this.vertices[0]) && typeof this.vertices[0][0] !== 'number') {
+    for (var i = 0, len = this._edges.length; i < len; i++) {
+      union = (i === 0) ?
+        this.offsetContour(this.vertices[i], this._edges[i]):
+        martinez.union(union, this.offsetContour(this.vertices[i], this._edges[i]));
+    }
+  } else {
+    union = (this.vertices.length === 1) ?
+      this.offsetPoint() :
+      this.offsetContour(this.vertices, this._edges);
   }
 
-  return this.vertices.length > 2 ? union : [union];
+  return union;
+};
+
+
+/**
+ * @param  {Array.<Array.<Number>>|Array.<Array.<...>>} curve
+ * @param  {Array.<Edge>|Array.<Array.<...>>} edges
+ * @return {Polygon}
+ */
+Offset.prototype.offsetContour = function(curve, edges) {
+  var union, i, len;
+  if (isArray(curve[0]) && typeof curve[0][0] === 'number') {
+    // we have 1 less edge than vertices
+    for (i = 0, len = curve.length - 1; i < len; i++) {
+      var segment = this.ensureLastPoint(
+        this._offsetSegment(curve[i], curve[i + 1], edges[i], this._distance)
+      );
+      union = (i === 0) ?
+                [this.ensureLastPoint(segment)] :
+                martinez.union(union, this.ensureLastPoint(segment));
+    }
+  } else {
+    for (i = 0, len = edges.length; i < len; i++) {
+      union = (i === 0) ?
+        this.offsetContour(curve[i], edges[i]) :
+        martinez.union(union, this.offsetContour(curve[i], edges[i]));
+    }
+  }
+  return union;
 };
 
 
@@ -2080,11 +2230,13 @@ Offset.prototype.offsetPoint = function(distance) {
   this.distance(distance);
   var vertices = this._arcSegments * 2;
   var points   = [];
-  var center   = this.vertices[0];
+  var center   = this.vertices;
   var radius   = this._distance;
   var angle    = 0;
 
-  for (var i = 0; i < vertices - 1; i++) {
+  if (vertices % 2 === 0) vertices++;
+
+  for (var i = 0; i < vertices; i++) {
     angle += (2 * Math.PI / vertices); // counter-clockwise
     points.push([
       center[0] + (radius * Math.cos(angle)),
@@ -2092,11 +2244,62 @@ Offset.prototype.offsetPoint = function(distance) {
     ]);
   }
 
-  return points;
+  return orientRings([this.ensureLastPoint(points)]);
 };
+
+
+Offset.orientRings = orientRings;
 
 module.exports = Offset;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./edge":15,"martinez-polygon-clipping":5}]},{},[16])(16)
+},{"./edge":15,"./utils":17,"martinez-polygon-clipping":5}],17:[function(require,module,exports){
+/**
+ * @param  {*} arr
+ * @return {Boolean}
+ */
+var isArray = module.exports.isArray = Array.isArray || function (arr) {
+  return Object.prototype.toString.call(arr) === '[object Array]';
+};
+
+
+/**
+ * @param  {Array.<Number>} p1
+ * @param  {Array.<Number>} p2
+ * @return {Boolean}
+ */
+module.exports.equals = function equals(p1, p2) {
+  return p1[0] === p2[0] && p1[1] === p2[1];
+};
+
+
+/**
+ * @param  {*}       coordinates
+ * @param  {Number=} depth
+ * @return {*}
+ */
+module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
+  depth = depth || 0;
+  var i, len;
+  if (isArray(coordinates) && typeof coordinates[0][0] === 'number') {
+    var area = 0;
+    var ring = coordinates;
+
+    for (i = 0, len = ring.length; i < len; i++) {
+      var pt1 = ring[i];
+      var pt2 = ring[(i + 1) % len];
+      area += pt1[0] * pt2[1];
+      area -= pt2[0] * pt1[1];
+    }
+    if ((!isHole && area > 0) || (isHole && area < 0)) {
+      ring.reverse();
+    }
+  } else {
+    for (i = 0, len = coordinates.length; i < len; i++) {
+      orientRings(coordinates[i], depth + 1, i > 0);
+    }
+  }
+
+  return coordinates;
+};
+},{}]},{},[16])(16)
 });
