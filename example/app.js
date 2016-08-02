@@ -72,7 +72,6 @@ function run (margin) {
   layers.eachLayer(function(layer) {
     var gj = layer.toGeoJSON();
     console.log(gj, margin);
-    if (margin === 0) return;
     var shape = project(gj, function(coord) {
       var pt = map.options.crs.latLngToPoint(L.latLng(coord.slice().reverse()), map.getZoom());
       return [pt.x, pt.y];
@@ -89,7 +88,7 @@ function run (margin) {
       margined = {
         type: 'Feature',
         geometry: {
-          type: 'Polygon',
+          type: margin === 0 ? 'LineString' : 'Polygon',
           coordinates: res
         }
       };

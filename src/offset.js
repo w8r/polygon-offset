@@ -1,12 +1,11 @@
 var Edge     = require('./edge');
 var martinez = require('martinez-polygon-clipping');
-var utils = require('./utils');
+var utils    = require('./utils');
 
 
 var isArray     = utils.isArray;
 var equals      = utils.equals;
 var orientRings = utils.orientRings;
-
 
 
 /**
@@ -321,6 +320,7 @@ Offset.prototype.padding = function(dist) {
  * @return {Array.<Object>}
  */
 Offset.prototype.offsetLine = function(dist) {
+  if (dist === 0) return this.vertices;
   return orientRings(this.offsetLines(dist));
 };
 
@@ -402,5 +402,8 @@ Offset.prototype.offsetPoint = function(distance) {
 
   return orientRings([this.ensureLastPoint(points)]);
 };
+
+
+Offset.orientRings = orientRings;
 
 module.exports = Offset;

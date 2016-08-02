@@ -38,6 +38,6 @@
     "url": "https://github.com/w8r/polygon-offset.git"
   },
   "dependencies": {
-    "martinez-polygon-clipping": "^0.1.1"
+    "martinez-polygon-clipping": "^0.1.3"
   }
 }
