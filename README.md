@@ -50,6 +50,8 @@ var polyline = offset.data(points).offsetLine(5);
 
 ```
 
+Result will be array of linear rings.
+
 ## Dependencies
 
 [Martinez](https://github.com/w8r/martinez/) clipping algorithm
@@ -99,6 +101,3 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-
-
