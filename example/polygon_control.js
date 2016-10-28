@@ -28,7 +28,7 @@ L.NewPolygonControl = L.EditControl.extend({
   options: {
     position: 'topleft',
     kind: 'polygon',
-    html: '▰'
+    html: '&#x2206;'
   }
 });
 

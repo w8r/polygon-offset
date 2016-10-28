@@ -572,7 +572,7 @@ module.exports = require('./src/index');
 
 },{"./src/index":10}],6:[function(require,module,exports){
 var signedArea = require('./signed_area');
-var equals = require('./equals');
+// var equals = require('./equals');
 
 /**
  * @param  {SweepEvent} e1
@@ -609,8 +609,6 @@ function specialCases(e1, e2, p1, p2) {
     return (!e1.isBelow(e2.otherEvent.point)) ? 1 : -1;
   }
 
-  return (!e1.isSubject && e2.isSubject) ? 1 : -1;
-
   // uncomment this if you want to play with multipolygons
   // if (e1.isSubject === e2.isSubject) {
   //   if(equals(e1.point, e2.point) && e1.contourId === e2.contourId) {
@@ -619,11 +617,11 @@ function specialCases(e1, e2, p1, p2) {
   //     return e1.contourId > e2.contourId ? 1 : -1;
   //   }
   // }
-  //
-  // return e1.isSubject ? -1 : 1;
+
+  return (!e1.isSubject && e2.isSubject) ? 1 : -1;
 }
 
-},{"./equals":9,"./signed_area":12}],7:[function(require,module,exports){
+},{"./signed_area":12}],7:[function(require,module,exports){
 var signedArea    = require('./signed_area');
 var compareEvents = require('./compare_events');
 var equals        = require('./equals');
@@ -1019,7 +1017,7 @@ function subdivideSegments(eventQueue, subject, clipping, sbbox, cbbox, operatio
     }
 
     if (event.left) {
-      var ins = sweepLine.insert(event);
+      sweepLine.insert(event);
       // _renderSweepLine(sweepLine, event.point, event);
 
       next = sweepLine.findIter(event);
@@ -1028,6 +1026,7 @@ function subdivideSegments(eventQueue, subject, clipping, sbbox, cbbox, operatio
 
       // Cannot get out of the tree what we just put there
       if (!prev || !next) {
+        console.log('brute');
         var iterators = findIterBrute(sweepLine);
         prev = iterators[0];
         next = iterators[1];
@@ -1126,7 +1125,7 @@ function isArray (arr) {
 
 
 function addHole(contour, idx) {
-  if (!isArray(contour[0][0])) {
+  if (isArray(contour[0]) && !isArray(contour[0][0])) {
     contour = [contour];
   }
   contour[idx] = [];
@@ -1139,7 +1138,7 @@ function addHole(contour, idx) {
  * @return {Array.<SweepEvent>}
  */
 function orderEvents(sortedEvents) {
-  var i, len;
+  var event, i, len;
   var resultEvents = [];
   for (i = 0, len = sortedEvents.length; i < len; i++) {
     event = sortedEvents[i];
@@ -1183,7 +1182,7 @@ function orderEvents(sortedEvents) {
  * @return {Array.<*>} polygons
  */
 function connectEdges(sortedEvents) {
-  var event, i, len;
+  var i, len;
   var resultEvents = orderEvents(sortedEvents);
 
 
@@ -1201,7 +1200,7 @@ function connectEdges(sortedEvents) {
     var contour = [];
     result.push(contour);
 
-    var contourId = result.length - 1;
+    var ringId = result.length - 1;
     depth.push(0);
     holeOf.push(-1);
 
@@ -1209,15 +1208,15 @@ function connectEdges(sortedEvents) {
     if (resultEvents[i].prevInResult) {
       var lowerContourId = resultEvents[i].prevInResult.contourId;
       if (!resultEvents[i].prevInResult.resultInOut) {
-        addHole(result[lowerContourId], contourId);
-        holeOf[contourId] = lowerContourId;
-        depth[contourId]  = depth[lowerContourId] + 1;
-        isHole[contourId] = true;
+        addHole(result[lowerContourId], ringId);
+        holeOf[ringId] = lowerContourId;
+        depth[ringId]  = depth[lowerContourId] + 1;
+        isHole[ringId] = true;
       } else if (isHole[lowerContourId]) {
-        addHole(result[holeOf[lowerContourId]], contourId);
-        holeOf[contourId] = holeOf[lowerContourId];
-        depth[contourId]  = depth[lowerContourId];
-        isHole[contourId] = true;
+        addHole(result[holeOf[lowerContourId]], ringId);
+        holeOf[ringId] = holeOf[lowerContourId];
+        depth[ringId]  = depth[lowerContourId];
+        isHole[ringId] = true;
       }
     }
 
@@ -1230,10 +1229,10 @@ function connectEdges(sortedEvents) {
 
       if (resultEvents[pos].left) {
         resultEvents[pos].resultInOut = false;
-        resultEvents[pos].contourId   = contourId;
+        resultEvents[pos].contourId   = ringId;
       } else {
         resultEvents[pos].otherEvent.resultInOut = true;
-        resultEvents[pos].otherEvent.contourId   = contourId;
+        resultEvents[pos].otherEvent.contourId   = ringId;
       }
 
       pos = resultEvents[pos].pos;
@@ -1247,12 +1246,12 @@ function connectEdges(sortedEvents) {
 
     processed[pos] = processed[resultEvents[pos].pos] = true;
     resultEvents[pos].otherEvent.resultInOut = true;
-    resultEvents[pos].otherEvent.contourId   = contourId;
+    resultEvents[pos].otherEvent.contourId   = ringId;
 
 
     // depth is even
     /* eslint-disable no-bitwise */
-    if (depth[contourId] & 1) {
+    if (depth[ringId] & 1) {
       changeOrientation(contour);
     }
     /* eslint-enable no-bitwise */
