@@ -14,13 +14,13 @@
   "author": "Alexander Milevski <info@w8r.name>",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^13.1.1",
-    "eslint": "^3.8.1",
+    "browserify": "^14.4.0",
+    "eslint": "^4.0.0",
     "geojson-project": "^1.0.1",
-    "http-server": "^0.9.0",
+    "http-server": "^0.10.0",
     "leaflet": "^1.0.1",
     "nodemon": "^1.11.0",
-    "tap": "^8.0.0",
+    "tap": "^10.3.3",
     "watchify": "^3.7.0"
   },
   "scripts": {
@@ -38,6 +38,6 @@
     "url": "https://github.com/w8r/polygon-offset.git"
   },
   "dependencies": {
-    "martinez-polygon-clipping": "^0.1.5"
+    "martinez-polygon-clipping": "^0.2.0"
   }
 }

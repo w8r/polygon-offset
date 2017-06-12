@@ -290,6 +290,7 @@ Offset.prototype.margin = function(dist) {
   if (dist === 0) return this.vertices;
 
   var union = this.offsetLines(this._distance);
+
   //return union;
   union = martinez.union(this.vertices, union);
   return orientRings(union);
@@ -336,6 +337,7 @@ Offset.prototype.offsetLines = function(dist) {
   this.distance(dist);
   if (isArray(this.vertices[0]) && typeof this.vertices[0][0] !== 'number') {
     for (var i = 0, len = this._edges.length; i < len; i++) {
+      console.log(union);
       union = (i === 0) ?
         this.offsetContour(this.vertices[i], this._edges[i]):
         martinez.union(union, this.offsetContour(this.vertices[i], this._edges[i]));
@@ -363,6 +365,7 @@ Offset.prototype.offsetContour = function(curve, edges) {
       var segment = this.ensureLastPoint(
         this._offsetSegment(curve[i], curve[i + 1], edges[i], this._distance)
       );
+      console.log(segment);
       union = (i === 0) ?
                 [this.ensureLastPoint(segment)] :
                 martinez.union(union, this.ensureLastPoint(segment));
