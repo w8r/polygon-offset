@@ -44,5 +44,11 @@ module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
     }
   }
 
+  if (depth === 0 && typeof coordinates[0][0][0] === 'number') {
+    var clone = coordinates[0].slice(0, 1)[0];
+    coordinates[0].pop();
+    coordinates[0].push([clone[0], clone[1]]);
+  }
+
   return coordinates;
 };
