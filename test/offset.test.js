@@ -80,5 +80,17 @@ tap.test('polygon.offset', function(t) {
     t.end();
   });
 
+  t.test('Avoid mutation of last point of polygons', function(t) {
+    var out = new Offset([
+      [0,0], [0,100],
+      [100,100], [100,0], [0,0]
+    ]).offset(5);
+    out[0][0][0] = 'foo';
+    t.is(out[0][0][0], 'foo');
+    t.is(out[0][out[0].length - 1][0], -5);
+
+    t.end();
+  });
+
   t.end();
 });
