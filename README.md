@@ -1,4 +1,4 @@
-# Offset [![npm version](https://badge.fury.io/js/polygon-offset.svg)](https://badge.fury.io/js/polygon-offset) [![CircleCI](https://circleci.com/gh/w8r/polygon-offset.svg?style=shield)](https://circleci.com/gh/w8r/polygon-offset)
+# Offset [![npm version](https://badge.fury.io/js/polygon-offset.svg)](https://badge.fury.io/js/polygon-offset) [![TravisCI](https://travis-ci.org/w8r/polygon-offset.svg?branch=master)](https://travis-ci.org/w8r/polygon-offset)
 
 Small lib for polygon offsetting(margin/padding). See the [example](http://w8r.github.io/polygon-offset) of how it can be used with [Leaflet](http://leafletjs.com). It handles quite well oddly shaped and concave polygons.
 
