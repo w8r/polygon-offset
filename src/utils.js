@@ -8,6 +8,15 @@ var isArray = module.exports.isArray = Array.isArray || function (arr) {
 
 
 /**
+ * @param  {*} arr
+ * @return {Boolean}
+ */
+var isNonEmptyArray = module.exports.isNonEmptyArray = function (arr) {
+  return isArray(arr) && arr.length;
+};
+
+
+/**
  * @param  {Array.<Number>} p1
  * @param  {Array.<Number>} p2
  * @return {Boolean}
@@ -25,7 +34,7 @@ module.exports.equals = function equals(p1, p2) {
 module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
   depth = depth || 0;
   var i, len;
-  if (isArray(coordinates) && typeof coordinates[0][0] === 'number') {
+  if (isNonEmptyArray(coordinates) && typeof coordinates[0][0] === 'number') {
     var area = 0;
     var ring = coordinates;
 
@@ -44,7 +53,7 @@ module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
     }
   }
 
-  if (depth === 0 && typeof coordinates[0][0][0] === 'number') {
+  if (depth === 0 && isNonEmptyArray(coordinates) && isNonEmptyArray(coordinates[0]) && typeof coordinates[0][0][0] === 'number') {
     var clone = coordinates[0].slice(0, 1)[0];
     coordinates[0].pop();
     coordinates[0].push([clone[0], clone[1]]);
