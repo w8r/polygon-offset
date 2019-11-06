@@ -15,7 +15,7 @@
   "license": "MIT",
   "devDependencies": {
     "browserify": "^13.1.1",
-    "eslint": "^3.8.1",
+    "eslint": "^4.18.2",
     "geojson-project": "^1.0.1",
     "http-server": "^0.11.1",
     "leaflet": "^1.0.1",
