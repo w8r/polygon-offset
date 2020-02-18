@@ -1,4 +1,5 @@
-module.exports = L.Control.extend({
+import L from 'leaflet';
+export default L.Control.extend({
   options: {
     position: 'topright',
     defaultMargin: 20

@@ -1,13 +1,8 @@
-var tap = require('tap');
-var Utils = require('../src/utils');
+import assert from 'chai';
+import { orientRings } from '../src/utils';
 
-tap.test('orientRings', function(t) {
-
-  t.test('empty', function(t){
-    Utils.orientRings([]);
-    t.end();
+describe('orientRings', () => {
+  it('empty', () => {
+    orientRings([]);
   });
-
-
-  t.end();
 });

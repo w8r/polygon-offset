@@ -1,3 +1,5 @@
+import L from 'leaflet';
+
 L.Polygon.prototype._projectLatlngs = function (latlngs, result, projectedBounds, isHole) {
   var flat = latlngs[0] instanceof L.LatLng,
       len = latlngs.length,

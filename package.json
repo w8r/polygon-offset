@@ -2,7 +2,10 @@
   "name": "polygon-offset",
   "version": "0.3.1",
   "description": "Polygon offsetting algorithm, aimed for use with leaflet",
-  "main": "src/offset.js",
+  "main": "dist/polygon-offset.js",
+  "browser": "dist/polygon-offset.min.js",
+  "module": "src/index",
+  "jsnext:main": "src/index",
   "keywords": [
     "polygon",
     "offset",
@@ -14,24 +17,26 @@
   "author": "Alexander Milevski <info@w8r.name>",
   "license": "MIT",
   "devDependencies": {
-    "browserify": "^13.1.1",
+    "chai": "^4.2.0",
     "eslint": "^4.18.2",
+    "esm": "^3.2.25",
     "geojson-project": "^1.0.1",
-    "http-server": "^0.11.1",
+    "http-server": "^0.12.1",
     "leaflet": "^1.0.1",
-    "nodemon": "^1.11.0",
-    "tap": "^8.0.0",
-    "watchify": "^3.7.0"
+    "mocha": "^7.0.1",
+    "rollup": "^1.31.1",
+    "rollup-plugin-buble": "^0.19.8",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-terser": "^5.2.0"
   },
   "scripts": {
-    "watch-js": "watchify example/app.js -o example/bundle.js -dv",
-    "watch": "npm run watch-js",
-    "build-js": "browserify -s Offset src/offset.js > dist/offset.js",
-    "build": "npm run build-js",
+    "watch": "rollup -cw",
+    "build": "rollup -c",
     "start": "npm run watch & http-server -p 3003",
-    "test": "tap test/*.test.js -R spec",
-    "lint": "eslint ./src/",
-    "test:watch": "nodemon --exec 'npm run test && npm run lint'"
+    "test": "mocha -r esm",
+    "lint": "eslint ./src/"
   },
   "repository": {
     "type": "git",

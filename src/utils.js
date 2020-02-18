@@ -2,18 +2,16 @@
  * @param  {*} arr
  * @return {Boolean}
  */
-var isArray = module.exports.isArray = Array.isArray || function (arr) {
+export const isArray = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) === '[object Array]';
-};
+}
 
 
 /**
  * @param  {*} arr
  * @return {Boolean}
  */
-var isNonEmptyArray = module.exports.isNonEmptyArray = function (arr) {
-  return isArray(arr) && arr.length;
-};
+export const isNonEmptyArray = (arr) => isArray(arr) && arr.length;
 
 
 /**
@@ -21,9 +19,9 @@ var isNonEmptyArray = module.exports.isNonEmptyArray = function (arr) {
  * @param  {Array.<Number>} p2
  * @return {Boolean}
  */
-module.exports.equals = function equals(p1, p2) {
+export function equals(p1, p2) {
   return p1[0] === p2[0] && p1[1] === p2[1];
-};
+}
 
 
 /**
@@ -31,16 +29,16 @@ module.exports.equals = function equals(p1, p2) {
  * @param  {Number=} depth
  * @return {*}
  */
-module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
+export function orientRings(coordinates, depth, isHole) {
   depth = depth || 0;
-  var i, len;
+  let i, len;
   if (isNonEmptyArray(coordinates) && typeof coordinates[0][0] === 'number') {
-    var area = 0;
-    var ring = coordinates;
+    let area = 0;
+    const ring = coordinates;
 
     for (i = 0, len = ring.length; i < len; i++) {
-      var pt1 = ring[i];
-      var pt2 = ring[(i + 1) % len];
+      const pt1 = ring[i];
+      const pt2 = ring[(i + 1) % len];
       area += pt1[0] * pt2[1];
       area -= pt2[0] * pt1[1];
     }
@@ -53,11 +51,13 @@ module.exports.orientRings = function orientRings(coordinates, depth, isHole) {
     }
   }
 
-  if (depth === 0 && isNonEmptyArray(coordinates) && isNonEmptyArray(coordinates[0]) && typeof coordinates[0][0][0] === 'number') {
+  if (depth === 0 && isNonEmptyArray(coordinates)
+  && isNonEmptyArray(coordinates[0])
+  && typeof coordinates[0][0][0] === 'number') {
     var clone = coordinates[0].slice(0, 1)[0];
     coordinates[0].pop();
     coordinates[0].push([clone[0], clone[1]]);
   }
 
   return coordinates;
-};
+}

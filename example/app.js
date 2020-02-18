@@ -1,13 +1,15 @@
-var Offset = global.Offset = require('../src/offset');
-require('./leaflet_multipolygon');
-require('./polygon_control');
-var OffsetControl = require('./offset_control');
-var data = require('../test/fixtures/demo.json');
-var project = require('geojson-project');
+import Offset from '../src/index';
 
-var arcSegments = 5;
+import './leaflet_multipolygon';
+import './polygon_control';
+import L from 'leaflet';
+import OffsetControl from './offset_control';
+import data from '../test/fixtures/demo.json';
+import project from 'geojson-project';
 
-var style = {
+const arcSegments = 15;
+
+const style = {
         weight: 3,
         color: '#48f',
         opacity: 0.8,
@@ -22,10 +24,10 @@ var style = {
         color: '#D81706'
     },
     center = [22.2670, 114.188],
-    zoom = 17,
-    map, vertices, result;
+    zoom = 17;
+let vertices, result;
 
-map = global.map = L.map('map', {
+const map = window.map = L.map('map', {
   editable: true,
   maxZoom: 22
 }).setView(center, zoom);
@@ -43,8 +45,8 @@ map.addControl(new L.NewPointControl({
   callback: map.editTools.startMarker
 }));
 
-var layers = global.layers = L.geoJson(data).addTo(map);
-var results = global.results = L.geoJson(null, {
+var layers = window.layers = L.geoJson(data).addTo(map);
+var results = window.results = L.geoJson(null, {
   style: function(feature) {
     return marginStyle;
   }
@@ -71,7 +73,6 @@ function run (margin) {
   results.clearLayers();
   layers.eachLayer(function(layer) {
     var gj = layer.toGeoJSON();
-    console.log(gj, margin);
     var shape = project(gj, function(coord) {
       var pt = map.options.crs.latLngToPoint(L.latLng(coord.slice().reverse()), map.getZoom());
       return [pt.x, pt.y];
