@@ -13,12 +13,18 @@
   (global = global || self, global.Offset = factory());
 }(this, (function () { 'use strict';
 
+  var invert = function (ref) {
+    var a = ref[0];
+    var b = ref[1];
+
+    return [-a, -b];
+  };
+
   /**
    * Offset edge of the polygon
    *
    * @param  {Object} current
    * @param  {Object} next
-   * @constructor
    */
   var Edge = function Edge (current, next) {
 
@@ -35,24 +41,12 @@
     /**
      * @type {Object}
      */
-    this._inNormal= this.inwardsNormal();
+    this.inNormal= this.inwardsNormal();
 
     /**
      * @type {Object}
      */
-    this._outNormal = this.outwardsNormal();
-  };
-
-  /**
-   * Creates outwards normal
-   * @return {Object}
-   */
-  Edge.prototype.outwardsNormal = function outwardsNormal () {
-    var inwards = this.inwardsNormal();
-    return [
-      -inwards[0],
-      -inwards[1]
-    ];
+    this.outNormal = invert(this.inNormal);
   };
 
   /**
@@ -79,7 +73,7 @@
    * @return {Edge}
    */
   Edge.prototype.offset = function offset (dx, dy) {
-    return Edge.offsetEdge(this.current, this.next, dx, dy);
+    return offsetEdge(this.current, this.next, dx, dy);
   };
 
 
@@ -89,26 +83,7 @@
    * @return {Edge}
    */
   Edge.prototype.inverseOffset = function inverseOffset (dx, dy) {
-    return Edge.offsetEdge(this.next, this.current, dx, dy);
-  };
-
-
-  /**
-   * @static
-   * @param{Array.<Number>} current
-   * @param{Array.<Number>} next
-   * @param{Number}       dx
-   * @param{Number}       dy
-   * @return {Edge}
-   */
-  Edge.offsetEdge = function offsetEdge (current, next, dx, dy) {
-    return new Edge([
-      current[0] + dx,
-      current[1] + dy
-    ], [
-      next[0] + dx,
-      next[1] + dy
-    ]);
+    return offsetEdge(this.next, this.current, dx, dy);
   };
 
 
@@ -118,6 +93,15 @@
   Edge.prototype.inverse = function inverse () {
     return new Edge(this.next, this.current);
   };
+
+
+  var offsetEdge = function (current, next, dx, dy) { return new Edge([
+      current[0] + dx,
+      current[1] + dy
+    ], [
+      next[0] + dx,
+      next[1] + dy
+    ]); };
 
   var edge_type = { 
     NORMAL:               0, 
@@ -1814,17 +1798,17 @@
    * @param  {*} arr
    * @return {Boolean}
    */
-  var isArray$1 = Array.isArray || function (arr) {
-    return Object.prototype.toString.call(arr) === '[object Array]';
-  };
-
+  var isArray$1 =
+    Array.isArray ||
+    function (arr) {
+      return Object.prototype.toString.call(arr) === '[object Array]';
+    };
 
   /**
    * @param  {*} arr
    * @return {Boolean}
    */
   var isNonEmptyArray = function (arr) { return isArray$1(arr) && arr.length; };
-
 
   /**
    * @param  {Array.<Number>} p1
@@ -1834,7 +1818,6 @@
   function equals$1(p1, p2) {
     return p1[0] === p2[0] && p1[1] === p2[1];
   }
-
 
   /**
    * @param  {*}       coordinates
@@ -1863,9 +1846,12 @@
       }
     }
 
-    if (depth === 0 && isNonEmptyArray(coordinates)
-    && isNonEmptyArray(coordinates[0])
-    && typeof coordinates[0][0][0] === 'number') {
+    if (
+      depth === 0 &&
+      isNonEmptyArray(coordinates) &&
+      isNonEmptyArray(coordinates[0]) &&
+      typeof coordinates[0][0][0] === 'number'
+    ) {
       var clone = coordinates[0].slice(0, 1)[0];
       coordinates[0].pop();
       coordinates[0].push([clone[0], clone[1]]);
@@ -1874,18 +1860,107 @@
     return coordinates;
   }
 
-  console.log( martinezPolygonClipping.union);
+  /**
+   * Creates arch between two edges
+   *
+   * @param  {Array.<Object>} vertices
+   * @param  {Object}         center
+   * @param  {Number}         radius
+   * @param  {Object}         startVertex
+   * @param  {Object}         endVertex
+   * @param  {Number}         segments
+   * @param  {Boolean}        outwards
+   */
+  function arc(
+    vertices,
+    center,
+    radius,
+    startVertex,
+    endVertex,
+    segments,
+    outwards
+  ) {
+    var PI2 = Math.PI * 2;
+    var startAngle = Math.atan2(
+      startVertex[1] - center[1],
+      startVertex[0] - center[0]
+    );
+    var endAngle = Math.atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
+
+    // odd number please
+    if (segments % 2 === 0) { segments -= 1; }
+
+    if (startAngle < 0) { startAngle += PI2; }
+
+    if (endAngle < 0) { endAngle += PI2; }
+
+    var angle =
+      startAngle > endAngle ? startAngle - endAngle : startAngle + PI2 - endAngle;
+    var segmentAngle = (outwards ? -angle : PI2 - angle) / segments;
+
+    vertices.push(startVertex);
+    for (var i = 1; i < segments; ++i) {
+      angle = startAngle + segmentAngle * i;
+      vertices.push([
+        center[0] + Math.cos(angle) * radius,
+        center[1] + Math.sin(angle) * radius
+      ]);
+    }
+    vertices.push(endVertex);
+    return vertices;
+  }
+
+  /**
+   * @param  {Array.<Array.<Number>>} vertices
+   * @param  {Array.<Number>}         pt1
+   * @param  {Array.<Number>}         pt2
+   * @param  {Number}                 dist
+   * @param  {Number}                 arcSegments
+   * @return {Array.<Array.<Number>>}
+   */
+  function offsetSegment(v1, v2, e1, dist, arcSegments) {
+    var vertices = [];
+    var offsets = [
+      e1.offset(e1.inNormal[0] * dist, e1.inNormal[1] * dist),
+      e1.inverseOffset(e1.outNormal[0] * dist, e1.outNormal[1] * dist)
+    ];
+
+    for (var i = 0, len = 2; i < len; i++) {
+      var thisEdge = offsets[i];
+      var prevEdge = offsets[(i + len - 1) % len];
+      arc(
+        vertices,
+        i === 0 ? v1 : v2, // edges[i].current, // p1 or p2
+        dist,
+        prevEdge.next,
+        thisEdge.current,
+        arcSegments,
+        true
+      );
+    }
+
+    return vertices;
+  }
+
+  /**
+   * @param  {Array.<Object>} vertices
+   * @return {Array.<Object>}
+   */
+  function ensureLastPoint(vertices) {
+    if (!equals$1(vertices[0], vertices[vertices.length - 1])) {
+      vertices.push([vertices[0][0], vertices[0][1]]);
+    }
+    return vertices;
+  }
 
   /**
    * Offset builder
    *
    * @param {Array.<Object>=} vertices
    * @param {Number=}        arcSegments
-   * @constructor
    */
-  var Offset = function Offset (vertices, arcSegments) {
+  var Offset = function Offset(vertices, arcSegments) {
     if ( arcSegments === void 0 ) arcSegments = 5;
-
 
     /**
      * @type {Array.<Object>}
@@ -1901,7 +1976,6 @@
      * @type {Boolean}
      */
     this._closed = false;
-
 
     /**
      * @type {Number}
@@ -1926,7 +2000,7 @@
    */
   Offset.prototype.data = function data (vertices) {
     this._edges = [];
-    if (!isArray$1 (vertices)) {
+    if (!isArray$1(vertices)) {
       throw new Error('Offset requires at least one coodinate to work with');
     }
 
@@ -1939,7 +2013,6 @@
 
     return this;
   };
-
 
   /**
    * Recursively process contour to create normals
@@ -1973,7 +2046,6 @@
     return this;
   };
 
-
   /**
    * Validates if the first and last points repeat
    * TODO: check CCW
@@ -1983,8 +2055,10 @@
   Offset.prototype.validate = function validate (vertices) {
     var len = vertices.length;
     if (typeof vertices[0] === 'number') { return [vertices]; }
-    if (vertices[0][0] === vertices[len - 1][0] &&
-      vertices[0][1] === vertices[len - 1][1]) {
+    if (
+      vertices[0][0] === vertices[len - 1][0] &&
+      vertices[0][1] === vertices[len - 1][1]
+    ) {
       if (len > 1) {
         vertices = vertices.slice(0, len - 1);
         this._closed = true;
@@ -1992,48 +2066,6 @@
     }
     return vertices;
   };
-
-
-  /**
-   * Creates arch between two edges
-   *
-   * @param{Array.<Object>} vertices
-   * @param{Object}       center
-   * @param{Number}       radius
-   * @param{Object}       startVertex
-   * @param{Object}       endVertex
-   * @param{Number}       segments
-   * @param{Boolean}      outwards
-   */
-  Offset.prototype.createArc = function createArc (vertices, center, radius, startVertex, endVertex, segments, outwards) {
-    var PI2 = Math.PI * 2;
-    var startAngle = Math.atan2(startVertex[1] - center[1], startVertex[0] - center[0]);
-    var endAngle = Math.atan2(endVertex[1] - center[1], endVertex[0] - center[0]);
-
-    // odd number please
-    if (segments % 2 === 0) { segments -= 1; }
-
-    if (startAngle < 0) { startAngle += PI2; }
-
-    if (endAngle < 0) { endAngle += PI2; }
-
-    var angle = ((startAngle > endAngle) ?
-                (startAngle - endAngle) :
-                (startAngle + PI2 - endAngle));
-    var segmentAngle = ((outwards) ? -angle : PI2 - angle) / segments;
-
-    vertices.push(startVertex);
-    for (var i = 1; i < segments; ++i) {
-      angle = startAngle + segmentAngle * i;
-      vertices.push([
-        center[0] + Math.cos(angle) * radius,
-        center[1] + Math.sin(angle) * radius
-      ]);
-    }
-    vertices.push(endVertex);
-    return vertices;
-  };
-
 
   /**
    * @param{Number}dist
@@ -2045,48 +2077,6 @@
     return this;
   };
 
-
-  /**
-   * @static
-   * @param{Number}degrees
-   * @param{String=} units
-   * @return {Number}
-   */
-  Offset.degreesToUnits = function degreesToUnits (degrees, units) {
-    switch (units) {
-      case 'miles':
-        degrees = degrees / 69.047;
-      break;
-      case 'feet':
-        degrees = degrees / 364568.0;
-        break;
-      case 'kilometers':
-        degrees = degrees / 111.12;
-        break;
-      case 'meters':
-      case 'metres':
-        degrees = degrees / 111120.0;
-        break;
-    }
-    return degrees;
-  };
-
-
-  /**
-   * @param{Array.<Object>} vertices
-   * @return {Array.<Object>}
-   */
-  Offset.prototype.ensureLastPoint = function ensureLastPoint (vertices) {
-    if (!equals$1(vertices[0], vertices[vertices.length - 1])) {
-      vertices.push([
-        vertices[0][0],
-        vertices[0][1]
-      ]);
-    }
-    return vertices;
-  };
-
-
   /**
    * Decides by the sign if it's a padding or a margin
    *
@@ -2095,41 +2085,11 @@
    */
   Offset.prototype.offset = function offset (dist) {
     this.distance(dist);
-    return this._distance === 0 ? this.vertices :
-        (this._distance > 0 ? this.margin(this._distance) :
-          this.padding(-this._distance));
-  };
-
-
-  /**
-   * @param{Array.<Array.<Number>>} vertices
-   * @param{Array.<Number>}       pt1
-   * @param{Array.<Number>}       pt2
-   * @param{Number}               dist
-   * @return {Array.<Array.<Number>>}
-   */
-  Offset.prototype._offsetSegment = function _offsetSegment (v1, v2, e1, dist) {
-    var vertices = [];
-    var offsets = [
-      e1.offset(e1._inNormal[0] * dist, e1._inNormal[1] * dist),
-      e1.inverseOffset(e1._outNormal[0] * dist, e1._outNormal[1] * dist)
-    ];
-
-    for (var i = 0, len = 2; i < len; i++) {
-      var thisEdge = offsets[i];
-      var prevEdge = offsets[(i + len - 1) % len];
-      this.createArc(
-                vertices,
-                i === 0 ? v1 : v2, // edges[i].current, // p1 or p2
-                dist,
-                prevEdge.next,
-                thisEdge.current,
-                this._arcSegments,
-                true
-              );
-    }
-
-    return vertices;
+    return this._distance === 0
+      ? this.vertices
+      : this._distance > 0
+        ? this.margin(this._distance)
+        : this.padding(-this._distance);
   };
 
   /**
@@ -2139,7 +2099,8 @@
   Offset.prototype.margin = function margin (dist) {
     this.distance(dist);
 
-    if (typeof this.vertices[0] === 'number') { // point
+    if (typeof this.vertices[0] === 'number') {
+      // point
       return this.offsetPoint(this._distance);
     }
 
@@ -2151,7 +2112,6 @@
     return orientRings(union);
   };
 
-
   /**
    * @param{Number} dist
    * @return {Array.<Number>}
@@ -2159,7 +2119,7 @@
   Offset.prototype.padding = function padding (dist) {
     this.distance(dist);
 
-    if (this._distance === 0) { return this.ensureLastPoint(this.vertices); }
+    if (this._distance === 0) { return ensureLastPoint(this.vertices); }
     if (this.vertices.length === 2 && typeof this.vertices[0] === 'number') {
       return this.vertices;
     }
@@ -2179,7 +2139,6 @@
     return orientRings(this.offsetLines(dist));
   };
 
-
   /**
    * Just offsets lines, no fill
    * @param{Number} dist
@@ -2191,19 +2150,23 @@
     this.distance(dist);
     if (isArray$1(this.vertices[0]) && typeof this.vertices[0][0] !== 'number') {
       for (var i = 0, len = this._edges.length; i < len; i++) {
-        union = (i === 0) ?
-          this.offsetContour(this.vertices[i], this._edges[i]):
-          martinezPolygonClipping.union(union, this.offsetContour(this.vertices[i], this._edges[i]));
+        union =
+          i === 0
+            ? this.offsetContour(this.vertices[i], this._edges[i])
+            : martinezPolygonClipping.union(
+              union,
+              this.offsetContour(this.vertices[i], this._edges[i])
+            );
       }
     } else {
-      union = (this.vertices.length === 1) ?
-        this.offsetPoint() :
-        this.offsetContour(this.vertices, this._edges);
+      union =
+        this.vertices.length === 1
+          ? this.offsetPoint()
+          : this.offsetContour(this.vertices, this._edges);
     }
 
     return union;
   };
-
 
   /**
    * @param{Array.<Array.<Number>>|Array.<Array.<...>>} curve
@@ -2215,23 +2178,30 @@
     if (isArray$1(curve[0]) && typeof curve[0][0] === 'number') {
       // we have 1 less edge than vertices
       for (i = 0, len = curve.length - 1; i < len; i++) {
-        var segment = this.ensureLastPoint(
-          this._offsetSegment(curve[i], curve[i + 1], edges[i], this._distance)
+        var segment = ensureLastPoint(
+          offsetSegment(
+            curve[i],
+            curve[i + 1],
+            edges[i],
+            this._distance,
+            this._arcSegments
+          )
         );
-        union = (i === 0) ?
-                  [this.ensureLastPoint(segment)] :
-          martinezPolygonClipping.union(union, this.ensureLastPoint(segment));
+        union =
+          i === 0
+            ? [ensureLastPoint(segment)]
+            : martinezPolygonClipping.union(union, ensureLastPoint(segment));
       }
     } else {
       for (i = 0, len = edges.length; i < len; i++) {
-        union = (i === 0) ?
-          this.offsetContour(curve[i], edges[i]) :
-          martinezPolygonClipping.union(union, this.offsetContour(curve[i], edges[i]));
+        union =
+          i === 0
+            ? this.offsetContour(curve[i], edges[i])
+            : martinezPolygonClipping.union(union, this.offsetContour(curve[i], edges[i]));
       }
     }
     return union;
   };
-
 
   /**
    * @param{Number} distance
@@ -2243,19 +2213,19 @@
     var points = [];
     var center = this.vertices;
     var radius = this._distance;
-    var angle    = 0;
+    var angle = 0;
 
     if (vertices % 2 === 0) { vertices++; }
 
     for (var i = 0; i < vertices; i++) {
-      angle += (2 * Math.PI / vertices); // counter-clockwise
+      angle += (2 * Math.PI) / vertices; // counter-clockwise
       points.push([
-        center[0] + (radius * Math.cos(angle)),
-        center[1] + (radius * Math.sin(angle))
+        center[0] + radius * Math.cos(angle),
+        center[1] + radius * Math.sin(angle)
       ]);
     }
 
-    return orientRings([this.ensureLastPoint(points)]);
+    return orientRings([ensureLastPoint(points)]);
   };
 
   Offset.orientRings = orientRings;

@@ -23,8 +23,8 @@ describe('polygon.offset', () => {
     const e = new Edge([0, 0], [0, 5]);
     assert.deepEqual(e.current, [0, 0], 'current');
     assert.deepEqual(e.next, [0, 5], 'next');
-    assert.deepEqual(e._inNormal, [-1, 0], 'inwards normal');
-    assert.deepEqual(e._outNormal, [1, -0], 'outwards normal');
+    assert.deepEqual(e.inNormal, [-1, 0], 'inwards normal');
+    assert.deepEqual(e.outNormal, [1, -0], 'outwards normal');
   });
 
   it('data', () => {

@@ -7,121 +7,138 @@ import OffsetControl from './offset_control';
 import data from '../test/fixtures/demo.json';
 import project from 'geojson-project';
 
-const arcSegments = 15;
 
 const style = {
-        weight: 3,
-        color: '#48f',
-        opacity: 0.8,
-        dashArray: [2, 4]
-    },
-    marginStyle = {
-        weight: 2,
-        color: '#276D8F'
-    },
-    paddingStyle = {
-        weight: 2,
-        color: '#D81706'
-    },
-    center = [22.2670, 114.188],
-    zoom = 17;
+  weight: 3,
+  color: '#48f',
+  opacity: 0.8,
+  dashArray: [2, 4]
+},
+  marginStyle = {
+    weight: 2,
+    color: '#276D8F'
+  },
+  paddingStyle = {
+    weight: 2,
+    color: '#D81706'
+  },
+  center = [22.267, 114.188],
+  zoom = 17;
 let vertices, result;
 
-const map = window.map = L.map('map', {
+const map = (window.map = L.map('map', {
   editable: true,
   maxZoom: 22
-}).setView(center, zoom);
+}).setView(center, zoom));
 
+map.addControl(
+  new L.NewPolygonControl({
+    callback: map.editTools.startPolygon
+  })
+);
 
-map.addControl(new L.NewPolygonControl({
-  callback: map.editTools.startPolygon
-}));
+map.addControl(
+  new L.NewLineControl({
+    callback: map.editTools.startPolyline
+  })
+);
 
-map.addControl(new L.NewLineControl({
-  callback: map.editTools.startPolyline
-}));
+map.addControl(
+  new L.NewPointControl({
+    callback: map.editTools.startMarker
+  })
+);
 
-map.addControl(new L.NewPointControl({
-  callback: map.editTools.startMarker
-}));
-
-var layers = window.layers = L.geoJson(data).addTo(map);
-var results = window.results = L.geoJson(null, {
-  style: function(feature) {
+const layers = (window.layers = L.geoJson(data).addTo(map));
+const results = (window.results = L.geoJson(null, {
+  style: function (feature) {
     return marginStyle;
   }
-}).addTo(map);
+}).addTo(map));
 map.fitBounds(layers.getBounds(), { animate: false });
 
-map.addControl(new OffsetControl({
-  clear: function() {
-    layers.clearLayers();
-  },
-  callback: run
-}));
+map.addControl(
+  new OffsetControl({
+    clear: function () {
+      layers.clearLayers();
+    },
+    callback: run
+  })
+);
 
-map.on('editable:created', function(evt) {
+map.on('editable:created', function (evt) {
   layers.addLayer(evt.layer);
-  evt.layer.on('click', function(e) {
-    if ((e.originalEvent.ctrlKey || e.originalEvent.metaKey) && this.editEnabled()) {
+  evt.layer.on('click', function (e) {
+    if (
+      (e.originalEvent.ctrlKey || e.originalEvent.metaKey) &&
+      this.editEnabled()
+    ) {
       this.editor.newHole(e.latlng);
     }
   });
 });
 
-function run (margin) {
+function run(margin, arcSegments) {
   results.clearLayers();
-  layers.eachLayer(function(layer) {
-    var gj = layer.toGeoJSON();
-    var shape = project(gj, function(coord) {
-      var pt = map.options.crs.latLngToPoint(L.latLng(coord.slice().reverse()), map.getZoom());
+  layers.eachLayer(function (layer) {
+    const gj = layer.toGeoJSON();
+    const shape = project(gj, (coord) => {
+      const pt = map.options.crs.latLngToPoint(
+        L.latLng(coord.slice().reverse()),
+        map.getZoom()
+      );
       return [pt.x, pt.y];
     });
 
-    var margined;
-    console.log(gj.geometry.type);
+    let result;
+    console.log(gj.geometry.type, margin, arcSegments);
     if (gj.geometry.type === 'LineString') {
       if (margin < 0) return;
-      var res = new Offset(shape.geometry.coordinates)
+      const coordinates = new Offset(shape.geometry.coordinates)
         .arcSegments(arcSegments)
         .offsetLine(margin);
 
-      margined = {
+      result = {
         type: 'Feature',
         geometry: {
           type: margin === 0 ? 'LineString' : 'Polygon',
-          coordinates: res
-        }
-      };
-    } else if (gj.geometry.type === 'Point') {
-      var res = new Offset(shape.geometry.coordinates)
-        .arcSegments(arcSegments)
-        .offset(margin);
-
-      margined = {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: res
+          coordinates
         }
       };
     } else {
-      var res = new Offset(shape.geometry.coordinates).offset(margin);
-      margined = {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: res
-        }
-      };
+      const coordinates = new Offset(shape.geometry.coordinates)
+        .arcSegments(arcSegments)
+        .offset(margin);
+      if (gj.geometry.type === 'Point') {
+        result = {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates
+          }
+        };
+      } else {
+        result = {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates
+          }
+        };
+      }
     }
 
-    console.log('margined', margined);
-    results.addData(project(margined, function(pt) {
-      var ll = map.options.crs.pointToLatLng(L.point(pt.slice()), map.getZoom());
-      return [ll.lng, ll.lat];
-    }));
+    console.log('done', result);
+    results.addData(
+      project(result, pt => {
+        const ll = map.options.crs.pointToLatLng(
+          L.point(pt.slice()),
+          map.getZoom()
+        );
+        return [ll.lng, ll.lat];
+      })
+    );
   });
 }
 
-run (20);
+run(20, 15);

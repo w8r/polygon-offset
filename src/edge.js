@@ -1,9 +1,10 @@
+const invert = ([a, b]) => [-a, -b];
+
 /**
  * Offset edge of the polygon
  *
  * @param  {Object} current
  * @param  {Object} next
- * @constructor
  */
 export default class Edge {
 
@@ -22,24 +23,12 @@ export default class Edge {
     /**
      * @type {Object}
      */
-    this._inNormal  = this.inwardsNormal();
+    this.inNormal  = this.inwardsNormal();
 
     /**
      * @type {Object}
      */
-    this._outNormal = this.outwardsNormal();
-  }
-
-  /**
-   * Creates outwards normal
-   * @return {Object}
-   */
-  outwardsNormal () {
-    const inwards = this.inwardsNormal();
-    return [
-      -inwards[0],
-      -inwards[1]
-    ];
+    this.outNormal = invert(this.inNormal);
   }
 
   /**
@@ -66,7 +55,7 @@ export default class Edge {
    * @return {Edge}
    */
   offset (dx, dy) {
-    return Edge.offsetEdge(this.current, this.next, dx, dy);
+    return offsetEdge(this.current, this.next, dx, dy);
   }
 
 
@@ -76,26 +65,7 @@ export default class Edge {
    * @return {Edge}
    */
   inverseOffset (dx, dy) {
-    return Edge.offsetEdge(this.next, this.current, dx, dy);
-  }
-
-
-  /**
-   * @static
-   * @param  {Array.<Number>} current
-   * @param  {Array.<Number>} next
-   * @param  {Number}         dx
-   * @param  {Number}         dy
-   * @return {Edge}
-   */
-  static offsetEdge (current, next, dx, dy) {
-    return new Edge([
-      current[0] + dx,
-      current[1] + dy
-    ], [
-      next[0] + dx,
-      next[1] + dy
-    ]);
+    return offsetEdge(this.next, this.current, dx, dy);
   }
 
 
@@ -106,3 +76,12 @@ export default class Edge {
     return new Edge(this.next, this.current);
   }
 }
+
+
+const offsetEdge = (current, next, dx, dy) => new Edge([
+    current[0] + dx,
+    current[1] + dy
+  ], [
+    next[0] + dx,
+    next[1] + dy
+  ]);

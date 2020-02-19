@@ -10,7 +10,7 @@ L.EditControl = L.Control.extend({
   },
 
   onAdd: function (map) {
-    var container = L.DomUtil.create('div', 'leaflet-control leaflet-bar'),
+    const container = L.DomUtil.create('div', 'leaflet-control leaflet-bar'),
         link = L.DomUtil.create('a', '', container);
 
     link.href = '#';
