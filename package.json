@@ -17,10 +17,10 @@
     "browserify": "^13.1.1",
     "eslint": "^4.18.2",
     "geojson-project": "^1.0.1",
-    "http-server": "^0.11.1",
+    "http-server": "^14.1.1",
     "leaflet": "^1.0.1",
     "nodemon": "^1.11.0",
-    "tap": "^8.0.0",
+    "tap": "^16.3.4",
     "watchify": "^3.7.0"
   },
   "scripts": {
